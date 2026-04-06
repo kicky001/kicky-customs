@@ -863,11 +863,18 @@ async function doSearch(page) {
     if (data.cached) {
       result = data.result;
       cached = true;
-    } else {
+    } else if (data.task_id) {
       showBanner('loading', `⏳ 已加入队列（位置: ${data.position}），等待处理...`);
       const taskResult = await pollTask(data.task_id);
       result = taskResult.result;
       cached = taskResult.cached || false;
+    } else {
+      // API直接返回了结果
+      result = data.result || data;
+      cached = false;
+    }
+    if (!result || result.total === undefined) {
+      throw new Error('API 返回数据格式异常，请检查 Token 和参数');
     }
     addHistory(kw, params.field, selectedSid);
     displayResult(result, cached);
@@ -997,7 +1004,8 @@ function analyzeResult(result, keyword) {
   const avgPrice = records.reduce((s, r) => s + (parseFloat(r.UnitPrice)||0), 0) / records.length;
 
   let html = `<h4>📊 "${keyword}" 查询分析</h4>`;
-  html += `<p>共 <b style="color:var(--green-light)">${result.total.toLocaleString()}</b> 条记录，当前页 ${records.length} 条</p>`;
+  const total = (result && result.total) ? result.total : totalRecords;
+  html += `<p>共 <b style="color:var(--green-light)">${total.toLocaleString()}</b> 条记录，当前页 ${records.length} 条</p>`;
 
   if (totalValue > 0) {
     html += `<p>当前页总金额: <b style="color:var(--green-light)">$${totalValue.toLocaleString('en-US',{maximumFractionDigits:2})}</b></p>`;
