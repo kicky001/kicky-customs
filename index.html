@@ -321,6 +321,77 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
 }
 .apollo-btn-lg:hover { opacity: 0.9; }
 
+/* 公司详情弹窗 */
+.company-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.company-modal {
+  background: #fff; border-radius: 10px; width: 680px; max-width: 90vw;
+  max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: linear-gradient(135deg, #2d8a4e, #1b6b38);
+  color: #fff;
+}
+.modal-header h3 { font-size: 15px; font-weight: 600; }
+.modal-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+.modal-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.modal-body::-webkit-scrollbar { width: 4px; }
+.modal-body::-webkit-scrollbar-thumb { background: #b8ccb8; border-radius: 2px; }
+
+.modal-section { margin-bottom: 16px; }
+.modal-section-title {
+  font-size: 13px; font-weight: 700; color: #2d6a3e;
+  margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #e8f5e9;
+  display: flex; align-items: center; gap: 6px;
+}
+.email-grid { display: flex; flex-direction: column; gap: 4px; }
+.email-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; background: #f8faf8; border: 1px solid #e0e8e0;
+  border-radius: 5px; font-size: 12px;
+}
+.email-addr { color: #0e7c7b; font-family: 'SF Mono', monospace; font-weight: 500; }
+.email-copy {
+  padding: 2px 8px; background: #e8f5e9; color: #2d8a4e; border: 1px solid #a5d6a7;
+  border-radius: 3px; cursor: pointer; font-size: 11px;
+}
+.email-copy:hover { background: #c8e6c9; }
+.email-note { font-size: 11px; color: #8a9e8a; margin-top: 4px; font-style: italic; }
+
+.bg-links { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.bg-link {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; background: #f8faf8; border: 1px solid #e0e8e0;
+  border-radius: 6px; text-decoration: none; color: #333; font-size: 12px;
+  transition: all 0.15s;
+}
+.bg-link:hover { background: #e8f5e9; border-color: #a5d6a7; }
+.bg-link .bg-icon { font-size: 18px; }
+.bg-link .bg-text { display: flex; flex-direction: column; }
+.bg-link .bg-title { font-weight: 600; color: #2d6a3e; }
+.bg-link .bg-desc { font-size: 10px; color: #8a9e8a; }
+
+.trade-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.trade-card {
+  padding: 10px; background: #f8faf8; border: 1px solid #e0e8e0;
+  border-radius: 6px; text-align: center;
+}
+.trade-card .trade-value { font-size: 18px; font-weight: 700; color: #1b7a3a; }
+.trade-card .trade-label { font-size: 11px; color: #8a9e8a; margin-top: 2px; }
+
+.modal-apollo-btn {
+  display: block; width: 100%; padding: 10px; text-align: center;
+  background: linear-gradient(135deg, #2d8a4e, #1b6b38); color: #fff;
+  border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; text-decoration: none; margin-top: 8px;
+}
+.modal-apollo-btn:hover { opacity: 0.9; }
+
 /* 响应式 */
 @media (max-width: 1200px) { .sidebar-right { display: none; } }
 @media (max-width: 900px) { .sidebar-left { width: 220px; min-width: 220px; } }
@@ -500,6 +571,17 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
       <input type="text" class="ai-input" id="aiInput" placeholder="向 AI 提问..." />
       <button class="ai-send" onclick="aiAsk()">发送</button>
     </div>
+  </div>
+</div>
+
+<!-- ========== 公司详情弹窗 ========== -->
+<div class="company-modal-overlay" id="companyModal" style="display:none;" onclick="if(event.target===this)closeCompanyModal()">
+  <div class="company-modal">
+    <div class="modal-header">
+      <h3 id="modalCompanyName"></h3>
+      <button class="modal-close" onclick="closeCompanyModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
@@ -962,7 +1044,7 @@ function renderTable() {
         html += `<td${cls}>`
           + `<button class="expand-btn" onclick="event.stopPropagation();searchApollo('${safeVal}')" title="Apollo.io 搜索邮箱">+</button>`
           + `<button class="exclude-btn" onclick="event.stopPropagation();quickExclude('${safeVal}')" title="排除此公司">×</button>`
-          + `<a class="company-link" href="#" onclick="event.preventDefault();searchByCompany('${safeVal}','${searchField}')" title="搜索该公司全部记录">${val}</a>`
+          + `<a class="company-link" href="#" onclick="event.preventDefault();openCompanyModal('${safeVal}','${searchField}')" title="查看公司详情 / 搜索邮箱 / 背调">${val}</a>`
           + `</td>`;
       } else if (c.cls === 'desc') {
         html += `<td${cls} title="${String(val).replace(/"/g,'&quot;')}">${val}</td>`;
@@ -1139,6 +1221,132 @@ function quickExclude(company) {
     applyExcludeFilter();
   }
 }
+
+// ========== 公司详情弹窗 ==========
+function openCompanyModal(rawName, field) {
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+  document.getElementById('modalCompanyName').textContent = company;
+  document.getElementById('companyModal').style.display = 'flex';
+
+  const domain = guessDomain(company);
+  const records = (filteredRecords.length ? filteredRecords : currentRecords)
+    .filter(r => (r.Importer1||'') === company || (r.Exporter1||'') === company);
+  const totalVal = records.reduce((s, r) => s + (parseFloat(r.TotalPrice)||0), 0);
+  const totalQty = records.reduce((s, r) => s + (parseFloat(r.QTY)||0), 0);
+  const countries = [...new Set(records.map(r => r.OrgCountry || r.DesCountry).filter(Boolean))];
+  const products = [...new Set(records.map(r => r.ProductDesc1).filter(Boolean))].slice(0, 5);
+  const dateRange = records.map(r => r.Dates || r.Months).filter(Boolean).sort();
+
+  const q = encodeURIComponent(company);
+  const domainQ = domain ? encodeURIComponent(domain) : q;
+
+  // 生成邮箱列表
+  const emails = [];
+  if (domain) {
+    emails.push(
+      { addr: `info@${domain}`, note: '通用邮箱' },
+      { addr: `sales@${domain}`, note: '销售部门' },
+      { addr: `purchasing@${domain}`, note: '采购部门' },
+      { addr: `contact@${domain}`, note: '联系邮箱' },
+      { addr: `export@${domain}`, note: '出口部门' },
+      { addr: `import@${domain}`, note: '进口部门' },
+    );
+  }
+
+  let html = '';
+
+  // 交易概要
+  html += `<div class="modal-section">
+    <div class="modal-section-title">📊 交易概要</div>
+    <div class="trade-summary">
+      <div class="trade-card"><div class="trade-value">${records.length}</div><div class="trade-label">交易记录数</div></div>
+      <div class="trade-card"><div class="trade-value">${totalVal > 0 ? '$'+totalVal.toLocaleString('en-US',{maximumFractionDigits:0}) : '—'}</div><div class="trade-label">交易总额</div></div>
+      <div class="trade-card"><div class="trade-value">${totalQty > 0 ? totalQty.toLocaleString() : '—'}</div><div class="trade-label">总数量</div></div>
+    </div>`;
+  if (dateRange.length) html += `<p style="font-size:11px;color:#8a9e8a;margin-top:6px;">交易时间: ${dateRange[0]} ~ ${dateRange[dateRange.length-1]}</p>`;
+  if (countries.length) html += `<p style="font-size:11px;color:#8a9e8a;">涉及国家: ${countries.join(', ')}</p>`;
+  if (products.length) html += `<p style="font-size:11px;color:#8a9e8a;">主要产品: ${products.join(' | ')}</p>`;
+  html += `</div>`;
+
+  // 邮箱搜索
+  html += `<div class="modal-section">
+    <div class="modal-section-title">📧 邮箱查找</div>`;
+  if (domain) {
+    html += `<p style="font-size:12px;color:#4a6a4a;margin-bottom:6px;">推测公司域名: <b style="color:#0e7c7b;">${domain}</b></p>`;
+    html += `<div class="email-grid">`;
+    emails.forEach(e => {
+      html += `<div class="email-item">
+        <span><span class="email-addr">${e.addr}</span> <span style="color:#8a9e8a;font-size:10px;">(${e.note})</span></span>
+        <button class="email-copy" onclick="copyEmail('${e.addr}')">复制</button>
+      </div>`;
+    });
+    html += `</div>`;
+    html += `<p class="email-note">以上为根据公司名推测的常见邮箱格式，建议通过 Apollo.io 验证真实邮箱</p>`;
+  } else {
+    html += `<p style="font-size:12px;color:#8a9e8a;">无法推测公司域名，请使用下方工具搜索</p>`;
+  }
+  html += `<a class="modal-apollo-btn" href="${apolloLink(company)}" target="_blank">🚀 在 Apollo.io 搜索真实联系人和邮箱</a>`;
+  html += `</div>`;
+
+  // 背调链接
+  html += `<div class="modal-section">
+    <div class="modal-section-title">🔍 公司背调</div>
+    <div class="bg-links">
+      <a class="bg-link" href="https://www.google.com/search?q=%22${q}%22+company" target="_blank">
+        <span class="bg-icon">🔎</span>
+        <span class="bg-text"><span class="bg-title">Google 搜索</span><span class="bg-desc">搜索公司公开信息</span></span>
+      </a>
+      <a class="bg-link" href="https://www.linkedin.com/search/results/companies/?keywords=${q}" target="_blank">
+        <span class="bg-icon">💼</span>
+        <span class="bg-text"><span class="bg-title">LinkedIn</span><span class="bg-desc">公司主页 / 员工</span></span>
+      </a>
+      <a class="bg-link" href="https://www.dnb.com/business-directory/company-search.html?term=${q}" target="_blank">
+        <span class="bg-icon">🏢</span>
+        <span class="bg-text"><span class="bg-title">D&B (邓白氏)</span><span class="bg-desc">企业信用报告</span></span>
+      </a>
+      <a class="bg-link" href="https://www.zoominfo.com/s#!search/company/${q}" target="_blank">
+        <span class="bg-icon">📋</span>
+        <span class="bg-text"><span class="bg-title">ZoomInfo</span><span class="bg-desc">公司规模 / 联系人</span></span>
+      </a>
+      <a class="bg-link" href="https://opencorporates.com/companies?q=${q}" target="_blank">
+        <span class="bg-icon">📑</span>
+        <span class="bg-text"><span class="bg-title">OpenCorporates</span><span class="bg-desc">全球企业注册信息</span></span>
+      </a>
+      <a class="bg-link" href="https://www.importgenius.com/search?q=${q}" target="_blank">
+        <span class="bg-icon">🚢</span>
+        <span class="bg-text"><span class="bg-title">ImportGenius</span><span class="bg-desc">进出口记录核查</span></span>
+      </a>
+      <a class="bg-link" href="https://www.facebook.com/search/pages/?q=${q}" target="_blank">
+        <span class="bg-icon">📘</span>
+        <span class="bg-text"><span class="bg-title">Facebook</span><span class="bg-desc">公司主页 / 动态</span></span>
+      </a>
+      <a class="bg-link" href="https://www.google.com/maps/search/${q}" target="_blank">
+        <span class="bg-icon">📍</span>
+        <span class="bg-text"><span class="bg-title">Google Maps</span><span class="bg-desc">公司地址 / 实景</span></span>
+      </a>
+    </div>
+  </div>`;
+
+  // 操作按钮
+  html += `<div class="modal-section" style="display:flex;gap:8px;">
+    <button class="modal-apollo-btn" style="flex:1;background:#4a6a4a;" onclick="closeCompanyModal();searchByCompany('${rawName}','${field}')">🔍 搜索该公司全部交易记录</button>
+  </div>`;
+
+  document.getElementById('modalBody').innerHTML = html;
+}
+
+function closeCompanyModal() {
+  document.getElementById('companyModal').style.display = 'none';
+}
+
+function copyEmail(email) {
+  navigator.clipboard.writeText(email).then(() => {
+    const btns = document.querySelectorAll('.email-copy');
+    btns.forEach(b => { if (b.previousElementSibling && b.previousElementSibling.querySelector('.email-addr').textContent === email) { b.textContent = '已复制'; setTimeout(() => b.textContent = '复制', 1500); } });
+  });
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCompanyModal(); });
 
 function searchByCompany(company, field) {
   document.getElementById('keyword').value = company.replace(/&quot;/g, '"').replace(/\\'/g, "'");
