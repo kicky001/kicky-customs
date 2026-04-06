@@ -1096,6 +1096,21 @@ function analyzeResult(result, keyword) {
     html += `<p>平均单价: <b style="color:var(--cyan)">$${avgPrice.toFixed(2)}</b></p>`;
   }
 
+  // 原产国饼图
+  const countries = {};
+  records.forEach(r => { if (r.OrgCountry) countries[r.OrgCountry] = (countries[r.OrgCountry]||0) + 1; });
+  const topCountries = Object.entries(countries).sort((a,b) => b[1]-a[1]).slice(0, 6);
+  if (topCountries.length > 1) {
+    html += '<h4>🌍 原产国分布</h4>';
+    html += drawPieChart(topCountries, records.length);
+  }
+
+  // 进口商饼图
+  if (topImporters.length > 1) {
+    html += '<h4>🏢 进口商占比</h4>';
+    html += drawPieChart(topImporters, records.length);
+  }
+
   if (topImporters.length) {
     html += '<h4>🏢 主要进口商</h4>';
     topImporters.forEach(([name, cnt]) => {
@@ -1105,6 +1120,13 @@ function analyzeResult(result, keyword) {
       </div>`;
     });
   }
+
+  // 出口商饼图
+  if (topExporters.length > 1) {
+    html += '<h4>🏭 出口商占比</h4>';
+    html += drawPieChart(topExporters, records.length);
+  }
+
   if (topExporters.length) {
     html += '<h4>🏭 主要出口商</h4>';
     topExporters.forEach(([name, cnt]) => {
@@ -1134,6 +1156,52 @@ function analyzeResult(result, keyword) {
   html += '<p style="color:var(--text-muted);font-size:11px;">点击公司名旁的 + 按钮或 "Apollo 找邮箱" 按钮，自动跳转 Apollo.io 搜索决策人邮箱。</p>';
 
   document.getElementById('aiContent').innerHTML = `<div class="ai-message">${html}</div>`;
+}
+
+// ========== 饼图 ==========
+function drawPieChart(data, totalCount) {
+  const COLORS = ['#2d8a4e','#0e7c7b','#c47f17','#d32f2f','#5c6bc0','#8a9e8a'];
+  const size = 120, cx = 60, cy = 60, r = 50;
+  let html = '<div style="display:flex;align-items:center;gap:10px;margin:6px 0;">';
+  // SVG
+  html += `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">`;
+  let cumAngle = -Math.PI / 2;
+  const otherCount = totalCount - data.reduce((s, d) => s + d[1], 0);
+  const slices = [...data];
+  if (otherCount > 0) slices.push(['其他', otherCount]);
+
+  slices.forEach(([, cnt], i) => {
+    const pct = cnt / totalCount;
+    if (pct <= 0) return;
+    const angle = pct * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(cumAngle);
+    const y1 = cy + r * Math.sin(cumAngle);
+    const x2 = cx + r * Math.cos(cumAngle + angle);
+    const y2 = cy + r * Math.sin(cumAngle + angle);
+    const large = angle > Math.PI ? 1 : 0;
+    const color = COLORS[i % COLORS.length];
+    if (pct >= 0.999) {
+      html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" />`;
+    } else {
+      html += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z" fill="${color}" />`;
+    }
+    cumAngle += angle;
+  });
+  html += '</svg>';
+  // 图例
+  html += '<div style="font-size:11px;line-height:1.8;">';
+  slices.forEach(([name, cnt], i) => {
+    const pct = ((cnt / totalCount) * 100).toFixed(1);
+    const color = COLORS[i % COLORS.length];
+    const shortName = name.length > 16 ? name.substring(0, 15) + '…' : name;
+    html += `<div style="display:flex;align-items:center;gap:4px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+      <span title="${name}">${shortName}</span>
+      <span style="color:#8a9e8a;margin-left:auto;">${pct}%</span>
+    </div>`;
+  });
+  html += '</div></div>';
+  return html;
 }
 
 // ========== 排除过滤 ==========
