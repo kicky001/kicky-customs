@@ -343,7 +343,6 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
     <span class="queue-item"><span class="queue-dot" style="background:var(--cyan)"></span> 缓存 <b id="qCache">-</b></span>
   </div>
   <div class="topbar-right">
-    <input type="text" class="token-input" id="proxyInput" placeholder="代理地址 (Worker URL)" style="width:180px;font-size:11px;" />
     <input type="password" class="token-input" id="tokenInput" placeholder="API Token..." />
     <button class="btn-sm" onclick="saveToken()">保存</button>
   </div>
@@ -507,9 +506,8 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
 <script>
 // ========== 配置 ==========
 // localhost走本地代理，线上走Cloudflare Worker代理
-// 部署Worker后把下面的地址改成你自己的Worker地址
-const WORKER_PROXY = localStorage.getItem('kicky_proxy') || '';
-const BASE = location.hostname === 'localhost' ? '' : (WORKER_PROXY || 'https://cd.210k.cc');
+const WORKER_PROXY = 'https://kicky-proxy.dongchunmotor.workers.dev';
+const BASE = location.hostname === 'localhost' ? '' : WORKER_PROXY;
 let currentPage = 1, totalPages = 1, totalRecords = 0;
 let currentRecords = [], filteredRecords = [], lastQuery = {};
 let excludeList = [];
@@ -700,24 +698,14 @@ let allDsItems = [];
 function getToken() { return localStorage.getItem('kicky_token') || ''; }
 function saveToken() {
   const t = document.getElementById('tokenInput').value.trim();
-  if (t) localStorage.setItem('kicky_token', t);
-  // 保存代理地址
-  const p = document.getElementById('proxyInput').value.trim().replace(/\/+$/, '');
-  localStorage.setItem('kicky_proxy', p);
-  // 刷新 BASE
-  window.__BASE = location.hostname === 'localhost' ? '' : (p || 'https://cd.210k.cc');
+  if (!t) return;
+  localStorage.setItem('kicky_token', t);
   document.getElementById('tokenInput').style.borderColor = 'var(--green)';
-  document.getElementById('proxyInput').style.borderColor = p ? 'var(--green)' : '';
-  setTimeout(() => {
-    document.getElementById('tokenInput').style.borderColor = '';
-    document.getElementById('proxyInput').style.borderColor = '';
-  }, 1500);
+  setTimeout(() => document.getElementById('tokenInput').style.borderColor = '', 1500);
 }
 function loadToken() {
   const t = getToken();
   if (t) document.getElementById('tokenInput').value = t;
-  const p = localStorage.getItem('kicky_proxy') || '';
-  if (p) document.getElementById('proxyInput').value = p;
 }
 
 // ========== 搜索历史 ==========
@@ -809,7 +797,7 @@ function toggleColSettings() {
 // ========== 队列状态 ==========
 async function fetchQueueStatus() {
   try {
-    const r = await fetch(`${getBase()}/api/queue/status`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
+    const r = await fetch(`${BASE}/api/queue/status`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
     if (!r.ok) return;
     const d = await r.json();
     document.getElementById('qPending').textContent = d.pending || 0;
@@ -820,11 +808,10 @@ async function fetchQueueStatus() {
 }
 
 // ========== API ==========
-function getBase() { return window.__BASE !== undefined ? window.__BASE : BASE; }
 function getHeaders() { return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' }; }
 
 async function submitQuery(params) {
-  const r = await fetch(`${getBase()}/api/query`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(params) });
+  const r = await fetch(`${BASE}/api/query`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(params) });
   if (!r.ok) {
     const txt = await r.text();
     throw new Error(`HTTP ${r.status}: ${txt}`);
@@ -835,7 +822,7 @@ async function submitQuery(params) {
 async function pollTask(taskId) {
   for (let i = 0; i < 60; i++) {
     await new Promise(r => setTimeout(r, 2000));
-    const r = await fetch(`${getBase()}/api/task/${taskId}`, { headers: getHeaders() });
+    const r = await fetch(`${BASE}/api/task/${taskId}`, { headers: getHeaders() });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
     if (d.status === 'done') return d;
