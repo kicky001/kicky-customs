@@ -1537,13 +1537,14 @@ function renderCompanyView() {
       if (!importerMap[imp]) importerMap[imp] = { name: imp, count: 0, totalPrice: 0, countries: new Set() };
       importerMap[imp].count++;
       importerMap[imp].totalPrice += price;
+      // 进口商所在国 = 目的国
       if (r.DesCountry) importerMap[imp].countries.add(r.DesCountry);
-      if (r.OrgCountry) importerMap[imp].countries.add(r.OrgCountry);
     }
     if (exp) {
       if (!exporterMap[exp]) exporterMap[exp] = { name: exp, count: 0, totalPrice: 0, countries: new Set() };
       exporterMap[exp].count++;
       exporterMap[exp].totalPrice += price;
+      // 出口商所在国 = 原产国
       if (r.OrgCountry) exporterMap[exp].countries.add(r.OrgCountry);
     }
   });
