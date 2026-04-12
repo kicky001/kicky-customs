@@ -1641,49 +1641,78 @@ function renderCompanyView() {
   const rows = filteredRecords.length ? filteredRecords : currentRecords;
   if (!rows.length) { document.getElementById('tableContainer').innerHTML = '<div class="state-empty"><div class="icon">📭</div><p>无数据</p></div>'; return; }
 
-  const direction = getDataSourceDirection();
   const dsCountry = getDataSourceCountry();
-  // 进口数据：本地方=Importer（当地采购商），对手方=Exporter（国外供应商）
-  // 出口数据：本地方=Exporter（当地出口商），对手方=Importer（国外采购商）
-  const isExportData = direction === 'export';
-  const localLabel = isExportData ? '🏭 本地出口商' : '🏢 本地进口商';
-  const foreignLabel = isExportData ? '🏢 国外采购商' : '🏭 国外供应商';
-  const localField = isExportData ? 'Exporter1' : 'Importer1';
-  const foreignField = isExportData ? 'Importer1' : 'Exporter1';
 
-  // 聚合按公司
-  const localMap = {}, foreignMap = {};
+  // 先聚合所有进口商和出口商，各自带国家
+  const importerMap = {}, exporterMap = {};
   rows.forEach(r => {
-    const localName = r[localField] || '';
-    const foreignName = r[foreignField] || '';
+    const imp = r.Importer1 || '';
+    const exp = r.Exporter1 || '';
     const price = parseFloat(r.TotalPrice) || 0;
-    if (localName) {
-      if (!localMap[localName]) localMap[localName] = { name: localName, count: 0, totalPrice: 0, countries: new Set() };
-      localMap[localName].count++;
-      localMap[localName].totalPrice += price;
-      // 本地方国家 = 数据源国家（或从数据取）
-      const c = isExportData ? r.OrgCountry : r.DesCountry;
-      if (c) localMap[localName].countries.add(c);
+    if (imp) {
+      if (!importerMap[imp]) importerMap[imp] = { name: imp, count: 0, totalPrice: 0, countries: new Set() };
+      importerMap[imp].count++;
+      importerMap[imp].totalPrice += price;
+      if (r.DesCountry) importerMap[imp].countries.add(r.DesCountry);
+      if (r.OrgCountry) importerMap[imp].countries.add(r.OrgCountry);
     }
-    if (foreignName) {
-      if (!foreignMap[foreignName]) foreignMap[foreignName] = { name: foreignName, count: 0, totalPrice: 0, countries: new Set() };
-      foreignMap[foreignName].count++;
-      foreignMap[foreignName].totalPrice += price;
-      const c = isExportData ? r.DesCountry : r.OrgCountry;
-      if (c) foreignMap[foreignName].countries.add(c);
+    if (exp) {
+      if (!exporterMap[exp]) exporterMap[exp] = { name: exp, count: 0, totalPrice: 0, countries: new Set() };
+      exporterMap[exp].count++;
+      exporterMap[exp].totalPrice += price;
+      if (r.OrgCountry) exporterMap[exp].countries.add(r.OrgCountry);
+      if (r.DesCountry) exporterMap[exp].countries.add(r.DesCountry);
     }
   });
 
-  const locals = Object.values(localMap).sort((a, b) => b.count - a.count);
-  const foreigns = Object.values(foreignMap).sort((a, b) => b.count - a.count);
+  // 根据数据源国家名 匹配国家代码/名称
+  const DS_COUNTRY_MAP = {
+    '美国':'US,UNITED STATES','墨西哥':'MX,MEXICO','加拿大':'CA,CANADA','英国':'GB,UK,UNITED KINGDOM',
+    '智利':'CL,CHILE','巴西':'BR,BRAZIL','阿根廷':'AR,ARGENTINA','秘鲁':'PE,PERU','哥伦比亚':'CO,COLOMBIA',
+    '厄瓜多尔':'EC,ECUADOR','乌拉圭':'UY,URUGUAY','巴拿马':'PA,PANAMA','玻利维亚':'BO,BOLIVIA',
+    '巴拉圭':'PY,PARAGUAY','委内瑞拉':'VE,VENEZUELA','印度':'IN,INDIA','越南':'VN,VIETNAM',
+    '泰国':'TH,THAILAND','印尼':'ID,INDONESIA','马来西亚':'MY,MALAYSIA','菲律宾':'PH,PHILIPPINES',
+    '巴基斯坦':'PK,PAKISTAN','中国':'CN,CHINA','韩国':'KR,KOREA','日本':'JP,JAPAN',
+    '俄罗斯':'RU,RUSSIA','土耳其':'TR,TURKEY','乌克兰':'UA,UKRAINE','西班牙':'ES,SPAIN',
+    '哈萨克斯坦':'KZ,KAZAKHSTAN','肯尼亚':'KE,KENYA','南非':'ZA,SOUTH AFRICA','澳大利亚':'AU,AUSTRALIA',
+    '新西兰':'NZ,NEW ZEALAND','孟加拉国':'BD,BANGLADESH','斯里兰卡':'LK,SRI LANKA',
+    '哥斯达黎加':'CR,COSTA RICA','萨尔瓦多':'SV,EL SALVADOR','危地马拉':'GT,GUATEMALA',
+    '多米尼加':'DO,DOMINICAN','尼加拉瓜':'NI,NICARAGUA','埃塞俄比亚':'ET,ETHIOPIA',
+  };
+  const dsCountryKeys = (DS_COUNTRY_MAP[dsCountry] || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+
+  function isLocalCompany(c) {
+    if (!dsCountryKeys.length) return false;
+    for (const country of c.countries) {
+      if (dsCountryKeys.includes(country.toUpperCase())) return true;
+    }
+    return false;
+  }
+
+  // 合并进口商+出口商，按本地/国外分组
+  const allCompanies = [];
+  Object.values(importerMap).forEach(c => allCompanies.push({ ...c, role: 'Importer1' }));
+  Object.values(exporterMap).forEach(c => {
+    // 如果同名公司已在进口商里，合并
+    const exist = allCompanies.find(x => x.name === c.name);
+    if (exist) { exist.count += c.count; exist.totalPrice += c.totalPrice; c.countries.forEach(cc => exist.countries.add(cc)); }
+    else allCompanies.push({ ...c, role: 'Exporter1' });
+  });
+
+  const locals = allCompanies.filter(c => isLocalCompany(c)).sort((a, b) => b.count - a.count);
+  const foreigns = allCompanies.filter(c => !isLocalCompany(c)).sort((a, b) => b.count - a.count);
+
+  const localLabel = `🏢 ${dsCountry}本地公司`;
+  const foreignLabel = '🌍 国外公司';
 
   const field = document.getElementById('field').value;
   const keyword = document.getElementById('keyword').value.trim();
   const isCompanySearch = (field === 'Importer1' || field === 'Exporter1');
   const totalVal = rows.reduce((s,r) => s + (parseFloat(r.TotalPrice)||0), 0);
 
-  function companyCard(c, roleField) {
+  function companyCard(c) {
     const country = [...c.countries][0] || '';
+    const roleField = c.role || 'Importer1';
     const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
     return `<div class="cv-company-card">
       <input type="checkbox" class="cv-check" data-company="${safeN}" data-role="${roleField}" data-country="${country}" data-count="${c.count}" data-price="${c.totalPrice.toFixed(2)}" onclick="event.stopPropagation();updateBatchBar()" />
@@ -1700,7 +1729,7 @@ function renderCompanyView() {
 
   // 数据源提示
   html += `<div style="text-align:center;font-size:12px;color:#8a9e8a;margin-bottom:12px;">
-    📍 数据源: <b style="color:#2d6a3e;">${dsCountry}</b> · ${isExportData ? '出口数据' : '进口数据'} · 本地方 = ${isExportData ? '出口商' : '进口商'}
+    📍 数据源: <b style="color:#2d6a3e;">${dsCountry}</b> · 本地公司按国家自动识别 · ${locals.length} 家本地 / ${foreigns.length} 家国外
   </div>`;
 
   // 关系图模式：按公司名搜索时
@@ -1709,7 +1738,7 @@ function renderCompanyView() {
 
     // 左侧
     html += '<div class="cv-side cv-side-left">';
-    locals.forEach(c => { html += companyCard(c, localField); });
+    locals.forEach(c => { html += companyCard(c); });
     if (locals.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无数据</div>';
     html += '</div>';
 
@@ -1733,7 +1762,7 @@ function renderCompanyView() {
 
     // 右侧
     html += '<div class="cv-side cv-side-right">';
-    foreigns.forEach(c => { html += companyCard(c, foreignField); });
+    foreigns.forEach(c => { html += companyCard(c); });
     if (foreigns.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无数据</div>';
     html += '</div>';
 
@@ -1742,13 +1771,13 @@ function renderCompanyView() {
     // 列表模式：按产品搜索时
     html += '<div class="cv-list-mode">';
     if (locals.length > 0) {
-      html += `<div class="cv-section"><div class="cv-section-title">${localLabel} · ${dsCountry} <span class="cv-count">(${locals.length} 家)</span></div>`;
-      locals.forEach(c => { html += companyCard(c, localField); });
+      html += `<div class="cv-section"><div class="cv-section-title">${localLabel} <span class="cv-count">(${locals.length} 家)</span></div>`;
+      locals.forEach(c => { html += companyCard(c); });
       html += '</div>';
     }
     if (foreigns.length > 0) {
       html += `<div class="cv-section"><div class="cv-section-title">${foreignLabel} <span class="cv-count">(${foreigns.length} 家)</span></div>`;
-      foreigns.forEach(c => { html += companyCard(c, foreignField); });
+      foreigns.forEach(c => { html += companyCard(c); });
       html += '</div>';
     }
     html += '</div>';
