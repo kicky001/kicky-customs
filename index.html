@@ -475,6 +475,27 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
 .cv-company-name { font-size: 12px; font-weight: 600; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 .cv-badge { padding: 2px 8px; background: #ffeaea; color: #ee5a24; border-radius: 10px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
 
+/* 公司选择 */
+.cv-company-card .cv-check {
+  width: 18px; height: 18px; border-radius: 4px; border: 2px solid #ccc;
+  cursor: pointer; flex-shrink: 0; accent-color: #2d8a4e;
+}
+.cv-company-card .cv-check:checked { border-color: #2d8a4e; }
+.cv-batch-bar {
+  position: sticky; bottom: 0; background: #fff; border-top: 2px solid #2d8a4e;
+  padding: 10px 16px; display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.1); z-index: 20;
+}
+.cv-batch-bar .cv-sel-count { font-size: 13px; font-weight: 600; color: #2d8a4e; }
+.cv-batch-btn {
+  padding: 8px 18px; font-size: 13px; font-weight: 600; border: none;
+  border-radius: 6px; cursor: pointer; color: #fff; display: flex; align-items: center; gap: 4px;
+}
+.cv-batch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.cv-batch-zoho { background: linear-gradient(135deg, #e42527, #c41e20); }
+.cv-batch-excel { background: linear-gradient(135deg, #217346, #185c37); }
+.cv-batch-clear { background: #999; }
+
 /* 非关系图模式（产品搜索时） */
 .cv-list-mode { max-width: 800px; margin: 0 auto; }
 .cv-section { margin-bottom: 20px; }
@@ -1560,10 +1581,11 @@ function renderCompanyView() {
   function companyCard(c, roleField) {
     const country = [...c.countries][0] || '';
     const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
-    return `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','${roleField}')">
-      <span class="cv-flag">${getFlag(country)}</span>
-      <span class="cv-country-tag">${country || '—'}</span>
-      <div class="cv-company-info">
+    return `<div class="cv-company-card">
+      <input type="checkbox" class="cv-check" data-company="${safeN}" data-role="${roleField}" data-country="${country}" data-count="${c.count}" data-price="${c.totalPrice.toFixed(2)}" onclick="event.stopPropagation();updateBatchBar()" />
+      <span class="cv-flag" onclick="openCompanyModal('${safeN}','${roleField}')">${getFlag(country)}</span>
+      <span class="cv-country-tag" onclick="openCompanyModal('${safeN}','${roleField}')">${country || '—'}</span>
+      <div class="cv-company-info" onclick="openCompanyModal('${safeN}','${roleField}')">
         <div class="cv-company-name" title="${c.name}">${c.name}</div>
       </div>
       <span class="cv-badge">(${c.count}+)</span>
@@ -1623,8 +1645,136 @@ function renderCompanyView() {
     html += '</div>';
   }
 
+  // 批量操作栏
+  html += `<div class="cv-batch-bar" id="batchBar" style="display:none;">
+    <span class="cv-sel-count" id="batchCount">已选 0 家</span>
+    <button class="cv-batch-btn cv-batch-zoho" onclick="batchPushZoho()">🚀 推送选中到 Zoho CRM</button>
+    <button class="cv-batch-btn cv-batch-excel" onclick="batchExportExcel()">📊 导出选中到 Excel</button>
+    <button class="cv-batch-btn cv-batch-clear" onclick="batchClearSelection()">✕ 取消选择</button>
+    <label style="margin-left:auto;font-size:12px;color:#666;cursor:pointer;display:flex;align-items:center;gap:4px;">
+      <input type="checkbox" id="batchSelectAll" onchange="batchToggleAll(this.checked)" /> 全选
+    </label>
+  </div>`;
+
   html += '</div>';
   document.getElementById('tableContainer').innerHTML = html;
+}
+
+function updateBatchBar() {
+  const checked = document.querySelectorAll('.cv-check:checked');
+  const bar = document.getElementById('batchBar');
+  if (!bar) return;
+  if (checked.length > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('batchCount').textContent = `已选 ${checked.length} 家`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function batchToggleAll(selectAll) {
+  document.querySelectorAll('.cv-check').forEach(cb => cb.checked = selectAll);
+  updateBatchBar();
+}
+
+function batchClearSelection() {
+  document.querySelectorAll('.cv-check').forEach(cb => cb.checked = false);
+  const sa = document.getElementById('batchSelectAll');
+  if (sa) sa.checked = false;
+  updateBatchBar();
+}
+
+function getSelectedCompanies() {
+  const result = [];
+  document.querySelectorAll('.cv-check:checked').forEach(cb => {
+    const company = cb.dataset.company.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+    result.push({
+      name: company,
+      role: cb.dataset.role,
+      country: cb.dataset.country,
+      count: parseInt(cb.dataset.count) || 0,
+      totalPrice: parseFloat(cb.dataset.price) || 0,
+    });
+  });
+  return result;
+}
+
+async function batchPushZoho() {
+  const companies = getSelectedCompanies();
+  if (!companies.length) return;
+
+  const zohoToken = getZohoToken();
+  if (!zohoToken) { alert('请先在右上角填入 Zoho CRM Token 并保存'); return; }
+
+  const btn = document.querySelector('.cv-batch-zoho');
+  btn.disabled = true;
+  const origText = btn.textContent;
+
+  let success = 0, failed = 0;
+  for (let i = 0; i < companies.length; i++) {
+    const c = companies[i];
+    btn.textContent = `⏳ 推送中 ${i+1}/${companies.length}...`;
+
+    const domain = guessDomain(c.name);
+    const records = (filteredRecords.length ? filteredRecords : currentRecords)
+      .filter(r => (r.Importer1||'') === c.name || (r.Exporter1||'') === c.name);
+    const products = [...new Set(records.map(r => r.ProductDesc1).filter(Boolean))].slice(0, 3);
+
+    const leadData = { data: [{
+      Company: c.name,
+      Last_Name: c.name.split(' ').slice(-1)[0] || c.name,
+      First_Name: c.name.split(' ').slice(0, -1).join(' ') || '',
+      Lead_Source: 'Trade Data',
+      Description: `交易${c.count}次, 总额$${c.totalPrice.toFixed(0)}` + (products.length ? `, 产品: ${products.join('; ')}` : ''),
+      Website: domain ? `https://${domain}` : '',
+      Email: domain ? `info@${domain}` : '',
+      Country: c.country || '',
+    }]};
+
+    try {
+      const resp = await fetch(`${BASE}/zoho/crm/v2/Leads`, {
+        method: 'POST',
+        headers: { 'Authorization': `Zoho-oauthtoken ${zohoToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(leadData),
+      });
+      const result = await resp.json();
+      if (resp.ok && result.data && result.data[0] && result.data[0].status === 'success') success++;
+      else failed++;
+    } catch { failed++; }
+  }
+
+  btn.textContent = `✅ 完成：${success} 成功${failed ? ', ' + failed + ' 失败' : ''}`;
+  btn.style.background = '#2d8a4e';
+  setTimeout(() => { btn.textContent = origText; btn.style.background = ''; btn.disabled = false; }, 3000);
+}
+
+function batchExportExcel() {
+  const companies = getSelectedCompanies();
+  if (!companies.length) return;
+
+  const rows = companies.map(c => {
+    const domain = guessDomain(c.name);
+    const records = (filteredRecords.length ? filteredRecords : currentRecords)
+      .filter(r => (r.Importer1||'') === c.name || (r.Exporter1||'') === c.name);
+    const products = [...new Set(records.map(r => r.ProductDesc1).filter(Boolean))].slice(0, 5);
+    return {
+      'Company': c.name,
+      'Last Name': c.name,
+      'Email': domain ? `info@${domain}` : '',
+      'Website': domain ? `https://${domain}` : '',
+      'Lead Source': 'Trade Data',
+      'Country': c.country || '',
+      'Trade Count': c.count,
+      'Total Value (USD)': c.totalPrice.toFixed(2),
+      'Products': products.join('; '),
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:30},{wch:30},{wch:25},{wch:25},{wch:12},{wch:12},{wch:10},{wch:14},{wch:50}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Zoho导入');
+  XLSX.writeFile(wb, `CRM_批量导出_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 async function toggleInlineContact(btn, rawName) {
