@@ -101,6 +101,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   display: flex; align-items: center; gap: 4px; font-size: 12px;
 }
 .ds-group-header:hover { color: var(--accent-hover); }
+.ds-group-select {
+  margin-left: auto; padding: 1px 6px; font-size: 10px; background: #e8f5e9;
+  color: #2d8a4e; border: 1px solid #a5d6a7; border-radius: 3px; cursor: pointer;
+}
+.ds-group-select:hover { background: #c8e6c9; }
+.ds-group-select.active { background: #2d8a4e; color: #fff; border-color: #2d8a4e; }
 .ds-group-header .arrow { transition: transform 0.2s; font-size: 10px; }
 .ds-group-header .arrow.open { transform: rotate(90deg); }
 .ds-group-items { padding-left: 16px; }
@@ -1262,6 +1268,9 @@ function removeHistory(i) {
 }
 
 // ========== 数据源树 ==========
+let selectedSids = []; // 多选模式时的 SID 列表
+let selectedGroup = ''; // 当前选中的国家组
+
 function initDSTree() {
   DATA_SOURCES.forEach(g => g.items.forEach(item => { item.group = g.group; allDsItems.push(item); }));
   renderDSTree();
@@ -1274,28 +1283,52 @@ function renderDSTree(filter) {
   DATA_SOURCES.forEach(g => {
     const items = f ? g.items.filter(d => d.name.toLowerCase().includes(f) || d.sid.includes(f) || g.group.includes(f)) : g.items;
     if (items.length === 0) return;
-    const open = f || g.group === '美国' ? '' : ' collapsed';
-    const arrowCls = f || g.group === '美国' ? ' open' : '';
-    html += `<div class="ds-group-header" onclick="this.querySelector('.arrow').classList.toggle('open');this.nextElementSibling.classList.toggle('collapsed')">
-      <span class="arrow${arrowCls}">▶</span> ${g.group}
+    const open = f || g.group === '美国' || g.group === selectedGroup ? '' : ' collapsed';
+    const arrowCls = f || g.group === '美国' || g.group === selectedGroup ? ' open' : '';
+    const groupActive = selectedGroup === g.group ? ' active' : '';
+    html += `<div class="ds-group-header">
+      <span class="arrow${arrowCls}" onclick="this.classList.toggle('open');this.closest('.ds-group-header').nextElementSibling.classList.toggle('collapsed')">▶</span>
+      <span onclick="this.previousElementSibling.classList.toggle('open');this.closest('.ds-group-header').nextElementSibling.classList.toggle('collapsed')" style="flex:1;"> ${g.group}</span>
+      ${g.group !== '全球' && g.group !== '环球海运' && g.group !== '独联体' && items.length > 1 ? `<span class="ds-group-select${groupActive}" onclick="event.stopPropagation();selectGroup('${g.group}')">全部</span>` : ''}
     </div><div class="ds-group-items${open}">`;
     items.forEach(d => {
-      html += `<div class="ds-item${d.sid===selectedSid?' active':''}" data-sid="${d.sid}" onclick="selectDS('${d.sid}')">[${d.sid}] ${d.name}</div>`;
+      const isActive = selectedSids.length > 0 ? selectedSids.includes(d.sid) : d.sid === selectedSid;
+      html += `<div class="ds-item${isActive?' active':''}" data-sid="${d.sid}" onclick="selectDS('${d.sid}')">[${d.sid}] ${d.name}</div>`;
     });
     html += '</div>';
   });
   tree.innerHTML = html;
 }
 function filterDS() { renderDSTree(document.getElementById('dsSearch').value); }
+
 function selectDS(sid) {
   selectedSid = sid;
+  selectedSids = [];
+  selectedGroup = '';
   document.querySelectorAll('.ds-item').forEach(el => el.classList.toggle('active', el.dataset.sid === sid));
+  document.querySelectorAll('.ds-group-select').forEach(el => el.classList.remove('active'));
   const item = allDsItems.find(d => d.sid === sid);
   if (item) {
     document.getElementById('dsDetailName').textContent = `${item.name} [${item.sid}]`;
     document.getElementById('dsDetail').querySelector('div:nth-child(2)').textContent = `类型: ${item.type}  运输: ${item.transport}  更新: ${item.update}`;
     document.getElementById('dsDetail').querySelector('div:nth-child(3)').textContent = `范围: ${item.range}`;
   }
+}
+
+function selectGroup(group) {
+  const g = DATA_SOURCES.find(ds => ds.group === group);
+  if (!g) return;
+  selectedGroup = group;
+  selectedSids = g.items.map(d => d.sid);
+  selectedSid = selectedSids[0];
+  renderDSTree(document.getElementById('dsSearch').value);
+  document.getElementById('dsDetailName').textContent = `${group} 全部 (${selectedSids.length} 个数据源)`;
+  document.getElementById('dsDetail').querySelector('div:nth-child(2)').textContent = `包含: ${g.items.map(d => d.name).join(', ')}`;
+  document.getElementById('dsDetail').querySelector('div:nth-child(3)').textContent = `搜索时将合并所有数据源的结果`;
+}
+
+function getSelectedSids() {
+  return selectedSids.length > 0 ? selectedSids : [selectedSid];
 }
 
 // ========== 列设置 ==========
@@ -1362,6 +1395,24 @@ async function pollTask(taskId) {
   throw new Error('查询超时（等待超过10分钟）');
 }
 
+// ========== 单个 SID 查询 ==========
+async function querySingleSid(params) {
+  const data = await submitQuery(params);
+  let result, cached = false;
+  if (data.cached) {
+    result = data.result;
+    cached = true;
+  } else if (data.task_id) {
+    showBanner('loading', `⏳ [${params.sid}] 已入队（位置: ${data.position}），等待...`);
+    const taskResult = await pollTask(data.task_id);
+    result = taskResult.result;
+    cached = taskResult.cached || false;
+  } else {
+    result = data.result || data;
+  }
+  return { result, cached };
+}
+
 // ========== 搜索 ==========
 async function doSearch(page) {
   if (!getToken()) { alert('请先输入并保存 API Token'); return; }
@@ -1369,43 +1420,68 @@ async function doSearch(page) {
   if (!kw) { alert('请输入搜索关键词'); return; }
 
   currentPage = page;
-  const params = {
+  const sids = getSelectedSids();
+  const baseParams = {
     keyword: kw, field: document.getElementById('field').value,
-    sid: selectedSid, page_num: page,
+    page_num: page,
     page_size: parseInt(document.getElementById('pageSize').value),
   };
   const ds = document.getElementById('dateStart').value.trim();
   const de = document.getElementById('dateEnd').value.trim();
-  if (ds) params.date_start = ds;
-  if (de) params.date_end = de;
-  lastQuery = { ...params };
+  if (ds) baseParams.date_start = ds;
+  if (de) baseParams.date_end = de;
+  lastQuery = { ...baseParams, sid: selectedSid };
 
   document.getElementById('searchBtn').disabled = true;
-  showBanner('loading', '⏳ 正在提交查询...');
+  showBanner('loading', sids.length > 1 ? `⏳ 正在查询 ${sids.length} 个数据源...` : '⏳ 正在提交查询...');
   document.getElementById('resultHeader').style.display = 'none';
   document.getElementById('paginationBar').style.display = 'none';
   document.getElementById('tableContainer').innerHTML = '<div class="state-empty"><div class="spinner"></div><p style="margin-top:12px;">查询中...</p></div>';
 
   try {
-    const data = await submitQuery(params);
     let result, cached = false;
-    if (data.cached) {
-      result = data.result;
-      cached = true;
-    } else if (data.task_id) {
-      showBanner('loading', `⏳ 已加入队列（位置: ${data.position}），等待处理...`);
-      const taskResult = await pollTask(data.task_id);
-      result = taskResult.result;
-      cached = taskResult.cached || false;
+
+    if (sids.length === 1) {
+      // 单数据源查询
+      const params = { ...baseParams, sid: sids[0] };
+      lastQuery = { ...params };
+      const r = await querySingleSid(params);
+      result = r.result;
+      cached = r.cached;
     } else {
-      // API直接返回了结果
-      result = data.result || data;
-      cached = false;
+      // 多数据源合并查询
+      const allRecords = [];
+      let totalCount = 0, totalMs = 0, cachedCount = 0;
+      for (let i = 0; i < sids.length; i++) {
+        const sid = sids[i];
+        const dsItem = allDsItems.find(d => d.sid === sid);
+        const dsName = dsItem ? dsItem.name : sid;
+        showBanner('loading', `⏳ 查询 ${i+1}/${sids.length}: ${dsName}...`);
+        try {
+          const params = { ...baseParams, sid };
+          const r = await querySingleSid(params);
+          if (r.result && r.result.records) {
+            // 给每条记录标记来源
+            r.result.records.forEach(rec => rec._source = dsName);
+            allRecords.push(...r.result.records);
+            totalCount += r.result.total || 0;
+            totalMs += r.result.took_ms || 0;
+            if (r.cached) cachedCount++;
+          }
+        } catch (e) {
+          console.warn(`SID ${sid} 查询失败:`, e.message);
+        }
+        // 非缓存查询之间加延迟，避免队列堆积
+        if (i < sids.length - 1) await new Promise(r => setTimeout(r, 500));
+      }
+      result = { total: totalCount, records: allRecords, took_ms: totalMs };
+      cached = cachedCount === sids.length;
     }
+
     if (!result || result.total === undefined) {
       throw new Error('API 返回数据格式异常，请检查 Token 和参数');
     }
-    addHistory(kw, params.field, selectedSid);
+    addHistory(kw, baseParams.field, selectedSids.length > 1 ? selectedGroup : selectedSid);
     displayResult(result, cached);
     fetchQueueStatus();
     analyzeResult(result, kw);
@@ -1544,34 +1620,62 @@ function getFlag(country) {
   return COUNTRY_FLAGS[country.toUpperCase()] || '🏳️';
 }
 
+// 判断数据源是进口还是出口
+function getDataSourceDirection() {
+  const ds = allDsItems.find(d => d.sid === selectedSid);
+  if (!ds) return 'import';
+  const name = ds.name;
+  // 名字含"出口"/"出口统计"/"export" = 出口数据，本地方是出口商
+  if (/出口|export/i.test(name)) return 'export';
+  return 'import';
+}
+
+// 获取数据源所属国家
+function getDataSourceCountry() {
+  const ds = allDsItems.find(d => d.sid === selectedSid);
+  if (!ds) return '';
+  return ds.group || '';
+}
+
 function renderCompanyView() {
   const rows = filteredRecords.length ? filteredRecords : currentRecords;
   if (!rows.length) { document.getElementById('tableContainer').innerHTML = '<div class="state-empty"><div class="icon">📭</div><p>无数据</p></div>'; return; }
 
+  const direction = getDataSourceDirection();
+  const dsCountry = getDataSourceCountry();
+  // 进口数据：本地方=Importer（当地采购商），对手方=Exporter（国外供应商）
+  // 出口数据：本地方=Exporter（当地出口商），对手方=Importer（国外采购商）
+  const isExportData = direction === 'export';
+  const localLabel = isExportData ? '🏭 本地出口商' : '🏢 本地进口商';
+  const foreignLabel = isExportData ? '🏢 国外采购商' : '🏭 国外供应商';
+  const localField = isExportData ? 'Exporter1' : 'Importer1';
+  const foreignField = isExportData ? 'Importer1' : 'Exporter1';
+
   // 聚合按公司
-  const importerMap = {}, exporterMap = {};
+  const localMap = {}, foreignMap = {};
   rows.forEach(r => {
-    const imp = r.Importer1 || '';
-    const exp = r.Exporter1 || '';
+    const localName = r[localField] || '';
+    const foreignName = r[foreignField] || '';
     const price = parseFloat(r.TotalPrice) || 0;
-    if (imp) {
-      if (!importerMap[imp]) importerMap[imp] = { name: imp, count: 0, totalPrice: 0, countries: new Set() };
-      importerMap[imp].count++;
-      importerMap[imp].totalPrice += price;
-      // 进口商所在国 = 目的国
-      if (r.DesCountry) importerMap[imp].countries.add(r.DesCountry);
+    if (localName) {
+      if (!localMap[localName]) localMap[localName] = { name: localName, count: 0, totalPrice: 0, countries: new Set() };
+      localMap[localName].count++;
+      localMap[localName].totalPrice += price;
+      // 本地方国家 = 数据源国家（或从数据取）
+      const c = isExportData ? r.OrgCountry : r.DesCountry;
+      if (c) localMap[localName].countries.add(c);
     }
-    if (exp) {
-      if (!exporterMap[exp]) exporterMap[exp] = { name: exp, count: 0, totalPrice: 0, countries: new Set() };
-      exporterMap[exp].count++;
-      exporterMap[exp].totalPrice += price;
-      // 出口商所在国 = 原产国
-      if (r.OrgCountry) exporterMap[exp].countries.add(r.OrgCountry);
+    if (foreignName) {
+      if (!foreignMap[foreignName]) foreignMap[foreignName] = { name: foreignName, count: 0, totalPrice: 0, countries: new Set() };
+      foreignMap[foreignName].count++;
+      foreignMap[foreignName].totalPrice += price;
+      const c = isExportData ? r.DesCountry : r.OrgCountry;
+      if (c) foreignMap[foreignName].countries.add(c);
     }
   });
 
-  const importers = Object.values(importerMap).sort((a, b) => b.count - a.count);
-  const exporters = Object.values(exporterMap).sort((a, b) => b.count - a.count);
+  const locals = Object.values(localMap).sort((a, b) => b.count - a.count);
+  const foreigns = Object.values(foreignMap).sort((a, b) => b.count - a.count);
 
   const field = document.getElementById('field').value;
   const keyword = document.getElementById('keyword').value.trim();
@@ -1594,19 +1698,24 @@ function renderCompanyView() {
 
   let html = '<div class="company-view">';
 
+  // 数据源提示
+  html += `<div style="text-align:center;font-size:12px;color:#8a9e8a;margin-bottom:12px;">
+    📍 数据源: <b style="color:#2d6a3e;">${dsCountry}</b> · ${isExportData ? '出口数据' : '进口数据'} · 本地方 = ${isExportData ? '出口商' : '进口商'}
+  </div>`;
+
   // 关系图模式：按公司名搜索时
   if (isCompanySearch && keyword) {
     html += '<div class="cv-graph">';
 
-    // 左侧：采购商/进口商
+    // 左侧
     html += '<div class="cv-side cv-side-left">';
-    importers.forEach(c => { html += companyCard(c, 'Importer1'); });
-    if (importers.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无采购商数据</div>';
+    locals.forEach(c => { html += companyCard(c, localField); });
+    if (locals.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无数据</div>';
     html += '</div>';
 
-    // 中间：连线 + 中心公司
+    // 中间
     html += `<div class="cv-center-col">
-      <div class="cv-connector-label">采购商<b>(${importers.length})</b></div>
+      <div class="cv-connector-label">${localLabel}<b>(${locals.length})</b></div>
       <div style="width:1px;height:30px;background:#ddd;margin:0 auto;"></div>
       <div style="display:flex;align-items:center;gap:0;">
         <div style="width:40px;height:1px;background:#ddd;"></div>
@@ -1619,27 +1728,27 @@ function renderCompanyView() {
         <div style="width:40px;height:1px;background:#ddd;"></div>
       </div>
       <div style="width:1px;height:30px;background:#ddd;margin:0 auto;"></div>
-      <div class="cv-connector-label">供应商<b>(${exporters.length})</b></div>
+      <div class="cv-connector-label">${foreignLabel}<b>(${foreigns.length})</b></div>
     </div>`;
 
-    // 右侧：供应商/出口商
+    // 右侧
     html += '<div class="cv-side cv-side-right">';
-    exporters.forEach(c => { html += companyCard(c, 'Exporter1'); });
-    if (exporters.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无供应商数据</div>';
+    foreigns.forEach(c => { html += companyCard(c, foreignField); });
+    if (foreigns.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无数据</div>';
     html += '</div>';
 
     html += '</div>';
   } else {
     // 列表模式：按产品搜索时
     html += '<div class="cv-list-mode">';
-    if (importers.length > 0) {
-      html += `<div class="cv-section"><div class="cv-section-title">🏢 进口商 <span class="cv-count">(${importers.length} 家)</span></div>`;
-      importers.forEach(c => { html += companyCard(c, 'Importer1'); });
+    if (locals.length > 0) {
+      html += `<div class="cv-section"><div class="cv-section-title">${localLabel} · ${dsCountry} <span class="cv-count">(${locals.length} 家)</span></div>`;
+      locals.forEach(c => { html += companyCard(c, localField); });
       html += '</div>';
     }
-    if (exporters.length > 0) {
-      html += `<div class="cv-section"><div class="cv-section-title">🏭 出口商 <span class="cv-count">(${exporters.length} 家)</span></div>`;
-      exporters.forEach(c => { html += companyCard(c, 'Exporter1'); });
+    if (foreigns.length > 0) {
+      html += `<div class="cv-section"><div class="cv-section-title">${foreignLabel} <span class="cv-count">(${foreigns.length} 家)</span></div>`;
+      foreigns.forEach(c => { html += companyCard(c, foreignField); });
       html += '</div>';
     }
     html += '</div>';
