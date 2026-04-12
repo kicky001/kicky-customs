@@ -526,7 +526,7 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
       <div class="state-empty" id="emptyState">
         <div class="icon">🔍</div>
         <p>输入关键词开始搜索海关数据</p>
-        <p class="sub">支持 150+ 国家和地区，287 个数据源</p>
+        <p class="sub">支持 150+ 国家和地区，完整 287 个数据源</p>
       </div>
     </div>
 
@@ -610,7 +610,7 @@ const ALL_COLUMNS = [
   { key: 'DesCountry', label: '目的国', show: true },
 ];
 
-// ========== 数据源 ==========
+// ========== 数据源（完整 287 个） ==========
 const DATA_SOURCES = [
   { group: '全球', items: [
     { sid:'994',name:'全球统计进口(年度)',type:'统计数据',transport:'全运输',update:'按周更新',range:'1962-2025' },
@@ -624,131 +624,27 @@ const DATA_SOURCES = [
     { sid:'107',name:'美国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
     { sid:'102',name:'美国船东提单',type:'提单数据',transport:'海运',update:'按天更新',range:'202301-202603' },
     { sid:'103',name:'美国出口',type:'提单数据',transport:'海运',update:'按月更新',range:'201401-202601' },
+    { sid:'105',name:'美国出口新版',type:'提单数据',transport:'海运',update:'一次性',range:'201601-202306' },
     { sid:'109',name:'美国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
   ]},
   { group: '墨西哥', items: [
     { sid:'501',name:'墨西哥',type:'关单数据',transport:'全运输',update:'每月两次',range:'202401-202603' },
+    { sid:'495',name:'墨西哥新版',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-202409' },
     { sid:'498',name:'墨西哥海运',type:'关单数据',transport:'海运',update:'按月更新',range:'201201-202601' },
-    { sid:'503',name:'墨西哥出口',type:'关单数据',transport:'全运输',update:'每月两次',range:'202401-202603' },
+    { sid:'492',name:'墨西哥空运',type:'关单数据',transport:'空运',update:'一次性',range:'202301-202412' },
+    { sid:'491',name:'墨西哥旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201201-202409' },
+    { sid:'497',name:'墨西哥补充版',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-201711' },
     { sid:'502',name:'墨西哥发票',type:'关单发票',transport:'全运输',update:'按月更新',range:'202401-202603' },
+    { sid:'503',name:'墨西哥出口',type:'关单数据',transport:'全运输',update:'每月两次',range:'202401-202603' },
+    { sid:'499',name:'墨西哥海运出口',type:'关单数据',transport:'海运',update:'按月更新',range:'201201-202601' },
+    { sid:'494',name:'墨西哥空运出口',type:'关单数据',transport:'空运',update:'一次性',range:'202301-202412' },
+    { sid:'493',name:'墨西哥旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201201-202409' },
+    { sid:'504',name:'墨西哥发票出口',type:'关单发票',transport:'全运输',update:'按月更新',range:'202401-202603' },
   ]},
   { group: '加拿大', items: [
     { sid:'361',name:'加拿大进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
+    { sid:'360',name:'加拿大',type:'名录数据',transport:'全运输',update:'年度更新',range:'2015-2021' },
     { sid:'363',name:'加拿大出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
-  ]},
-  { group: '英国', items: [
-    { sid:'180',name:'英国',type:'名录数据',transport:'全运输',update:'按月更新',range:'200801-202601' },
-    { sid:'183',name:'英国出口',type:'名录数据',transport:'全运输',update:'按月更新',range:'201601-202601' },
-    { sid:'181',name:'英国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202201-202601' },
-  ]},
-  { group: '欧盟', items: [
-    { sid:'650',name:'欧盟进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
-    { sid:'653',name:'欧盟出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
-  ]},
-  { group: '西班牙', items: [
-    { sid:'351',name:'西班牙进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
-    { sid:'353',name:'西班牙出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
-  ]},
-  { group: '日本', items: [
-    { sid:'761',name:'日本进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
-    { sid:'763',name:'日本出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
-  ]},
-  { group: '韩国', items: [
-    { sid:'170',name:'韩国',type:'名录数据',transport:'全运输',update:'按周更新',range:'200901-202603' },
-    { sid:'871',name:'韩国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'200401-202408' },
-  ]},
-  { group: '中国', items: [
-    { sid:'601',name:'中国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
-    { sid:'603',name:'中国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
-    { sid:'465',name:'中国台湾进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
-    { sid:'467',name:'中国台湾出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
-  ]},
-  { group: '印度', items: [
-    { sid:'421',name:'印度进口',type:'关单数据',transport:'全运输',update:'每十天',range:'201401-202603' },
-    { sid:'431',name:'印度快版',type:'关单数据',transport:'全运输',update:'按周更新',range:'201901-202603' },
-    { sid:'510',name:'印度出口',type:'关单数据',transport:'全运输',update:'每十天',range:'201401-202603' },
-  ]},
-  { group: '越南', items: [
-    { sid:'401',name:'越南进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
-    { sid:'403',name:'越南出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
-  ]},
-  { group: '泰国', items: [
-    { sid:'862',name:'泰国进口关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'202101-202505' },
-    { sid:'868',name:'泰国出口新版',type:'特殊数据',transport:'全运输',update:'按天更新',range:'202301-202603' },
-  ]},
-  { group: '印尼', items: [
-    { sid:'722',name:'印尼进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
-    { sid:'724',name:'印尼出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
-  ]},
-  { group: '马来西亚', items: [
-    { sid:'331',name:'马来西亚进口',type:'关单数据',transport:'全运输',update:'每月两次',range:'202301-202602' },
-    { sid:'333',name:'马来西亚出口',type:'关单数据',transport:'全运输',update:'每月两次',range:'202301-202602' },
-  ]},
-  { group: '菲律宾', items: [
-    { sid:'571',name:'菲律宾新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202603' },
-    { sid:'573',name:'菲律宾出口新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202603' },
-  ]},
-  { group: '巴基斯坦', items: [
-    { sid:'520',name:'巴基斯坦关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'201401-202603' },
-    { sid:'130',name:'巴基斯坦海运提单',type:'提单数据',transport:'海运',update:'按月更新',range:'200801-202512' },
-  ]},
-  { group: '俄罗斯', items: [
-    { sid:'126',name:'俄罗斯',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202504' },
-    { sid:'125',name:'俄罗斯铁路',type:'铁路数据',transport:'铁路',update:'按周更新',range:'201901-202603' },
-  ]},
-  { group: '土耳其', items: [
-    { sid:'932',name:'土耳其新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202511' },
-    { sid:'934',name:'土耳其新版出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'200101-202511' },
-  ]},
-  { group: '巴西', items: [
-    { sid:'291',name:'巴西进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
-    { sid:'298',name:'巴西提单',type:'提单数据',transport:'海运',update:'一次性',range:'201901-202512' },
-    { sid:'293',name:'巴西出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
-  ]},
-  { group: '阿根廷', items: [
-    { sid:'540',name:'阿根廷进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201001-202601' },
-    { sid:'542',name:'阿根廷快版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202001-202602' },
-    { sid:'543',name:'阿根廷出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
-  ]},
-  { group: '智利', items: [
-    { sid:'210',name:'智利',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202601' },
-    { sid:'213',name:'智利出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
-  ]},
-  { group: '哥伦比亚', items: [
-    { sid:'238',name:'哥伦比亚新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202601' },
-  ]},
-  { group: '秘鲁', items: [
-    { sid:'550',name:'秘鲁进口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201101-202603' },
-    { sid:'556',name:'秘鲁快版',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
-    { sid:'553',name:'秘鲁出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201501-202602' },
-  ]},
-  { group: '厄瓜多尔', items: [
-    { sid:'530',name:'厄瓜多尔进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202603' },
-    { sid:'533',name:'厄瓜多尔出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
-  ]},
-  { group: '乌克兰', items: [
-    { sid:'140',name:'乌克兰进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202602' },
-    { sid:'143',name:'乌克兰出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
-  ]},
-  { group: '哈萨克斯坦', items: [
-    { sid:'640',name:'哈萨克斯坦进口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
-    { sid:'643',name:'哈萨克斯坦出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
-  ]},
-  { group: '巴拿马', items: [
-    { sid:'250',name:'巴拿马进口',type:'关单数据',transport:'全运输',update:'按周更新',range:'200901-202602' },
-    { sid:'253',name:'巴拿马出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202602' },
-  ]},
-  { group: '肯尼亚', items: [
-    { sid:'742',name:'肯尼亚进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
-    { sid:'743',name:'肯尼亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
-  ]},
-  { group: '埃塞俄比亚', items: [
-    { sid:'690',name:'埃塞俄比亚进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
-    { sid:'693',name:'埃塞俄比亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
-  ]},
-  { group: '南非', items: [
-    { sid:'851',name:'南非进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
-    { sid:'853',name:'南非出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
   ]},
   { group: '澳大利亚', items: [
     { sid:'151',name:'澳大利亚进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202101-202601' },
@@ -758,18 +654,414 @@ const DATA_SOURCES = [
     { sid:'811',name:'新西兰进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
     { sid:'813',name:'新西兰出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
   ]},
+  { group: '巴拿马', items: [
+    { sid:'161',name:'科隆自贸区进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'250',name:'巴拿马',type:'关单数据',transport:'全运输',update:'按周更新',range:'200901-202602' },
+    { sid:'251',name:'巴拿马旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202505' },
+    { sid:'252',name:'巴拿马海运提单',type:'提单数据',transport:'海运',update:'按月更新',range:'201501-202602' },
+    { sid:'163',name:'科隆自贸区出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'253',name:'巴拿马出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202602' },
+    { sid:'255',name:'巴拿马出口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202505' },
+    { sid:'254',name:'巴拿马海运提单出口',type:'提单数据',transport:'海运',update:'按月更新',range:'201501-202602' },
+  ]},
+  { group: '哥斯达黎加', items: [
+    { sid:'560',name:'哥斯达黎加',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
+    { sid:'561',name:'哥斯达黎加旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201709' },
+    { sid:'565',name:'哥斯达黎加转口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201709' },
+    { sid:'567',name:'哥斯达黎加出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201501-202603' },
+    { sid:'563',name:'哥斯达黎加出口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201709' },
+  ]},
+  { group: '危地马拉', items: [
+    { sid:'711',name:'危地马拉进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'710',name:'危地马拉',type:'关单数据',transport:'全运输',update:'不定期',range:'201801-202602' },
+    { sid:'714',name:'危地马拉出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'713',name:'危地马拉出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-201909' },
+  ]},
+  { group: '萨尔瓦多', items: [
+    { sid:'450',name:'萨尔瓦多',type:'关单数据',transport:'全运输',update:'按天更新',range:'200801-202603' },
+  ]},
+  { group: '斐济', items: [
+    { sid:'891',name:'斐济',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202110' },
+    { sid:'893',name:'斐济出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202110' },
+  ]},
+  { group: '尼加拉瓜', items: [
+    { sid:'786',name:'尼加拉瓜新版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202101-202603' },
+    { sid:'785',name:'尼加拉瓜',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202403' },
+    { sid:'788',name:'尼加拉瓜新版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'202101-202603' },
+    { sid:'787',name:'尼加拉瓜出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202403' },
+  ]},
+  { group: '波多黎各', items: [
+    { sid:'941',name:'波多黎各进口统计',type:'统计数据',transport:'全运输',update:'按季度',range:'200207-202510' },
+    { sid:'943',name:'波多黎各出口统计',type:'统计数据',transport:'全运输',update:'按季度',range:'200207-202510' },
+  ]},
+  { group: '多米尼加', items: [
+    { sid:'201',name:'多米尼加',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+    { sid:'203',name:'多米尼加出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+  ]},
+  { group: '阿根廷', items: [
+    { sid:'540',name:'阿根廷',type:'关单数据',transport:'全运输',update:'按月更新',range:'201001-202601' },
+    { sid:'542',name:'阿根廷快版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202001-202602' },
+    { sid:'543',name:'阿根廷出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '秘鲁', items: [
+    { sid:'550',name:'秘鲁',type:'关单数据',transport:'全运输',update:'按周更新',range:'201101-202603' },
+    { sid:'556',name:'秘鲁快版',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'557',name:'秘鲁空运提单',type:'提单数据',transport:'空运',update:'一次性',range:'201801-201912' },
+    { sid:'559',name:'秘鲁海运提单',type:'提单数据',transport:'海运',update:'一次性',range:'201801-201910' },
+    { sid:'553',name:'秘鲁出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201501-202602' },
+  ]},
+  { group: '玻利维亚', items: [
+    { sid:'485',name:'玻利维亚快版',type:'关单数据',transport:'全运输',update:'半周更新',range:'201401-202603' },
+    { sid:'482',name:'玻利维亚新版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202501-202603' },
+    { sid:'486',name:'玻利维亚进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201001-202512' },
+    { sid:'481',name:'玻利维亚旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201808' },
+    { sid:'483',name:'玻利维亚快版出口',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'484',name:'玻利维亚新版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'202501-202603' },
+    { sid:'487',name:'玻利维亚出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201001-202512' },
+  ]},
+  { group: '智利', items: [
+    { sid:'211',name:'智利新版',type:'关单数据',transport:'全运输',update:'不定期',range:'202401-202603' },
+    { sid:'212',name:'智利空运',type:'关单数据',transport:'空运',update:'不定期',range:'202504-202603' },
+    { sid:'210',name:'智利',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202601' },
+    { sid:'213',name:'智利出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '巴西', items: [
+    { sid:'294',name:'巴西',type:'关单数据',transport:'全运输',update:'一次性',range:'202203-202511' },
+    { sid:'301',name:'巴西空运提单',type:'提单数据',transport:'空运',update:'一次性',range:'202401-202510' },
+    { sid:'291',name:'巴西进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'298',name:'巴西提单',type:'提单数据',transport:'海运',update:'一次性',range:'201901-202512' },
+    { sid:'297',name:'巴西旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-202111' },
+    { sid:'290',name:'巴西2009',type:'关单数据',transport:'全运输',update:'一次性',range:'200901-200912' },
+    { sid:'293',name:'巴西出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'295',name:'巴西旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-202110' },
+    { sid:'299',name:'巴西提单出口',type:'提单数据',transport:'海运',update:'一次性',range:'201901-202511' },
+    { sid:'296',name:'巴西出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202201-202510' },
+  ]},
+  { group: '巴拉圭', items: [
+    { sid:'115',name:'巴拉圭新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+    { sid:'111',name:'巴拉圭',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202208' },
+    { sid:'117',name:'巴拉圭出口新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+    { sid:'113',name:'巴拉圭出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202208' },
+  ]},
+  { group: '委内瑞拉', items: [
+    { sid:'414',name:'委内瑞拉提单',type:'提单数据',transport:'海运/空运',update:'按月更新',range:'201901-202508' },
+    { sid:'410',name:'委内瑞拉',type:'关单数据',transport:'全运输',update:'不定期',range:'200901-202408' },
+    { sid:'417',name:'委内瑞拉提单出口',type:'提单数据',transport:'海运/空运',update:'按月更新',range:'201901-202508' },
+    { sid:'413',name:'委内瑞拉出口',type:'关单数据',transport:'全运输',update:'不定期',range:'201401-202408' },
+  ]},
+  { group: '圭亚那', items: [
+    { sid:'935',name:'圭亚那',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202210' },
+    { sid:'937',name:'圭亚那出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201905-202210' },
+  ]},
+  { group: '哥伦比亚', items: [
+    { sid:'238',name:'哥伦比亚新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202601' },
+    { sid:'230',name:'哥伦比亚',type:'关单数据',transport:'全运输',update:'一次性',range:'200801-202404' },
+    { sid:'235',name:'哥伦比亚旧版',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202211' },
+    { sid:'237',name:'哥伦比亚出口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'200601-202212' },
+    { sid:'233',name:'哥伦比亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201806' },
+  ]},
+  { group: '厄瓜多尔', items: [
+    { sid:'530',name:'厄瓜多尔',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202603' },
+    { sid:'532',name:'厄瓜多尔进口快版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202603' },
+    { sid:'535',name:'厄瓜多尔空运提单',type:'提单数据',transport:'空运',update:'一次性',range:'202001-202112' },
+    { sid:'538',name:'厄瓜多尔海运提单',type:'提单数据',transport:'海运',update:'一次性',range:'202001-202112' },
+    { sid:'534',name:'厄瓜多尔出口快版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202603' },
+    { sid:'533',name:'厄瓜多尔出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'536',name:'厄瓜多尔空运提单出口',type:'提单数据',transport:'空运',update:'一次性',range:'202001-202112' },
+    { sid:'539',name:'厄瓜多尔海运提单出口',type:'提单数据',transport:'海运',update:'一次性',range:'202001-202112' },
+  ]},
+  { group: '乌拉圭', items: [
+    { sid:'281',name:'乌拉圭',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'285',name:'乌拉圭转口',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'282',name:'乌拉圭进口提单',type:'提单数据',transport:'全运输',update:'一次性',range:'201501-202405' },
+    { sid:'283',name:'乌拉圭出口',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'284',name:'乌拉圭出口提单',type:'提单数据',transport:'全运输',update:'一次性',range:'201501-202405' },
+  ]},
+  { group: '中国', items: [
+    { sid:'601',name:'中国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'465',name:'中国台湾进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
+    { sid:'460',name:'中国台湾',type:'名录数据',transport:'全运输',update:'一次性',range:'' },
+    { sid:'405',name:'中越双边进口',type:'关单数据',transport:'全运输',update:'一次性',range:'201701-202012' },
+    { sid:'603',name:'中国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'467',name:'中国台湾出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
+    { sid:'463',name:'中国台湾出口',type:'名录数据',transport:'全运输',update:'一次性',range:'' },
+    { sid:'407',name:'中越双边出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202102' },
+  ]},
+  { group: '印度', items: [
+    { sid:'421',name:'印度',type:'关单数据',transport:'全运输',update:'每十天',range:'201401-202603' },
+    { sid:'431',name:'印度快版',type:'关单数据',transport:'全运输',update:'按周更新',range:'201901-202603' },
+    { sid:'423',name:'印度空运',type:'特殊数据',transport:'空运',update:'按月更新',range:'202201-202512' },
+    { sid:'435',name:'印度经济特区',type:'关单数据',transport:'全运输',update:'不定期',range:'201901-202602' },
+    { sid:'510',name:'印度出口',type:'关单数据',transport:'全运输',update:'每十天',range:'201401-202603' },
+    { sid:'433',name:'印度快版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201901-202603' },
+    { sid:'425',name:'印度空运出口',type:'特殊数据',transport:'空运',update:'按月更新',range:'201601-202509' },
+    { sid:'437',name:'印度经济特区出口',type:'关单数据',transport:'全运输',update:'不定期',range:'202101-202602' },
+  ]},
+  { group: '越南', items: [
+    { sid:'401',name:'越南',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
+    { sid:'403',name:'越南出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
+  ]},
+  { group: '巴基斯坦', items: [
+    { sid:'520',name:'巴基斯坦关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'201401-202603' },
+    { sid:'130',name:'巴基斯坦海运提单',type:'提单数据',transport:'海运',update:'按月更新',range:'200801-202512' },
+    { sid:'311',name:'巴基斯坦空运提单',type:'提单数据',transport:'空运',update:'不定期',range:'202212-202305' },
+    { sid:'310',name:'巴基斯坦提单',type:'提单数据',transport:'海运/空运',update:'一次性',range:'200801-202108' },
+    { sid:'523',name:'巴基斯坦关单出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'527',name:'巴基斯坦出口新版',type:'提单数据',transport:'海运/空运',update:'一次性',range:'202202-202407' },
+  ]},
+  { group: '印尼', items: [
+    { sid:'722',name:'印度尼西亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'725',name:'印度尼西亚新版',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202407' },
+    { sid:'720',name:'印度尼西亚旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201807-202109' },
+    { sid:'724',name:'印度尼西亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+    { sid:'727',name:'印度尼西亚新版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202407' },
+    { sid:'723',name:'印度尼西亚旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201807-202109' },
+  ]},
+  { group: '泰国', items: [
+    { sid:'862',name:'泰国进口关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'202101-202505' },
+    { sid:'865',name:'泰国进口海运提单',type:'提单数据',transport:'海运',update:'每月两次',range:'201911-202505' },
+    { sid:'861',name:'泰国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202001-202412' },
+    { sid:'864',name:'泰国出口关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'202105-202505' },
+    { sid:'867',name:'泰国出口海运提单',type:'提单数据',transport:'海运',update:'每月两次',range:'201911-202505' },
+    { sid:'868',name:'泰国出口新版',type:'特殊数据',transport:'全运输',update:'按天更新',range:'202301-202603' },
+    { sid:'863',name:'泰国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202012-202412' },
+  ]},
+  { group: '土耳其', items: [
+    { sid:'932',name:'土耳其新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202511' },
+    { sid:'936',name:'土耳其保税区',type:'关单数据',transport:'全运输',update:'按月更新',range:'202408-202409' },
+    { sid:'931',name:'土耳其',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202511' },
+    { sid:'934',name:'土耳其新版出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'200101-202511' },
+    { sid:'933',name:'土耳其出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202001-202511' },
+    { sid:'672',name:'土耳其过境',type:'过境数据',transport:'陆运',update:'按月更新',range:'202301-202602' },
+  ]},
+  { group: '马来西亚', items: [
+    { sid:'331',name:'马来西亚',type:'关单数据',transport:'全运输',update:'每月两次',range:'202301-202602' },
+    { sid:'333',name:'马来西亚出口',type:'关单数据',transport:'全运输',update:'每月两次',range:'202301-202602' },
+  ]},
+  { group: '菲律宾', items: [
+    { sid:'571',name:'菲律宾新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202603' },
+    { sid:'570',name:'菲律宾',type:'关单数据',transport:'全运输',update:'不定期',range:'201501-202601' },
+    { sid:'573',name:'菲律宾出口新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202603' },
+    { sid:'572',name:'菲律宾出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202601' },
+  ]},
+  { group: '韩国', items: [
+    { sid:'170',name:'韩国',type:'名录数据',transport:'全运输',update:'按周更新',range:'200901-202603' },
+    { sid:'871',name:'韩国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'200401-202408' },
+    { sid:'873',name:'韩国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'200401-202408' },
+  ]},
+  { group: '孟加拉国', items: [
+    { sid:'831',name:'孟加拉',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'833',name:'孟加拉出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '乌兹别克斯坦', items: [
+    { sid:'631',name:'乌兹别克斯坦新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'630',name:'乌兹别克斯坦',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202312' },
+    { sid:'632',name:'乌兹别克斯坦出口新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'633',name:'乌兹别克斯坦出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202210' },
+  ]},
+  { group: '哈萨克斯坦', items: [
+    { sid:'640',name:'哈萨克斯坦',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
+    { sid:'643',name:'哈萨克斯坦出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
+  ]},
+  { group: '斯里兰卡', items: [
+    { sid:'660',name:'斯里兰卡',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'661',name:'斯里兰卡2',type:'关单数据',transport:'全运输',update:'按月更新',range:'202503-202506' },
+    { sid:'663',name:'斯里兰卡出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'662',name:'斯里兰卡2出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202503-202506' },
+  ]},
+  { group: '日本', items: [
+    { sid:'761',name:'日本进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'764',name:'日本空运进口统计',type:'统计数据',transport:'空运',update:'按月更新',range:'201401-202602' },
+    { sid:'766',name:'日本海运进口统计',type:'统计数据',transport:'海运',update:'按月更新',range:'201401-202602' },
+    { sid:'763',name:'日本出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'765',name:'日本空运出口统计',type:'统计数据',transport:'空运',update:'按月更新',range:'201401-202602' },
+    { sid:'767',name:'日本海运出口统计',type:'统计数据',transport:'海运',update:'按月更新',range:'201401-202602' },
+  ]},
+  { group: '阿富汗', items: [
+    { sid:'300',name:'阿富汗',type:'提单数据',transport:'海运',update:'按月更新',range:'200801-202512' },
+  ]},
+  { group: '欧亚经济联盟', items: [
+    { sid:'342',name:'欧亚经济联盟新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'341',name:'欧亚经济联盟',type:'关单数据',transport:'全运输',update:'一次性',range:'202201-202307' },
+    { sid:'344',name:'欧亚经济联盟新版出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'343',name:'欧亚经济联盟出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202201-202307' },
+  ]},
+  { group: '亚美尼亚', items: [
+    { sid:'951',name:'亚美尼亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201705-202602' },
+    { sid:'953',name:'亚美尼亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201705-202602' },
+  ]},
+  { group: '蒙古国', items: [
+    { sid:'371',name:'蒙古国',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202602' },
+    { sid:'373',name:'蒙古国出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202602' },
+  ]},
+  { group: '伊朗', items: [
+    { sid:'381',name:'伊朗',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202601' },
+    { sid:'383',name:'伊朗出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202601' },
+  ]},
+  { group: '巴勒斯坦', items: [
+    { sid:'391',name:'巴勒斯坦',type:'关单数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
+  ]},
+  { group: '新加坡', items: [
+    { sid:'471',name:'新加坡',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-201912' },
+    { sid:'473',name:'新加坡出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-201912' },
+  ]},
+  { group: '马尔代夫', items: [
+    { sid:'131',name:'马尔代夫',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+    { sid:'133',name:'马尔代夫出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+  ]},
+  { group: '俄罗斯', items: [
+    { sid:'126',name:'俄罗斯',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202504' },
+    { sid:'125',name:'俄罗斯铁路',type:'铁路数据',transport:'铁路',update:'按周更新',range:'201901-202603' },
+    { sid:'128',name:'俄罗斯新版',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202312' },
+    { sid:'121',name:'俄罗斯旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202312' },
+    { sid:'127',name:'俄罗斯出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202503' },
+    { sid:'129',name:'俄罗斯出口新版',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202312' },
+    { sid:'123',name:'俄罗斯旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202312' },
+  ]},
+  { group: '乌克兰', items: [
+    { sid:'140',name:'乌克兰',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202602' },
+    { sid:'143',name:'乌克兰出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
+  ]},
+  { group: '西班牙', items: [
+    { sid:'351',name:'西班牙',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+    { sid:'353',name:'西班牙出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '欧盟', items: [
+    { sid:'650',name:'欧盟进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+    { sid:'653',name:'欧盟出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '英国', items: [
+    { sid:'180',name:'英国',type:'名录数据',transport:'全运输',update:'按月更新',range:'200801-202601' },
+    { sid:'181',name:'英国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202201-202601' },
+    { sid:'183',name:'英国出口',type:'名录数据',transport:'全运输',update:'按月更新',range:'201601-202601' },
+    { sid:'182',name:'英国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202201-202601' },
+  ]},
+  { group: '摩尔多瓦', items: [
+    { sid:'321',name:'摩尔多瓦',type:'关单数据',transport:'全运输',update:'不定期',range:'201801-202303' },
+    { sid:'320',name:'摩尔多瓦2010',type:'关单数据',transport:'全运输',update:'一次性',range:'200901-201012' },
+    { sid:'323',name:'摩尔多瓦出口',type:'关单数据',transport:'全运输',update:'不定期',range:'201801-202303' },
+  ]},
+  { group: '科索沃', items: [
+    { sid:'441',name:'科索沃',type:'关单数据',transport:'全运输',update:'一次性',range:'201512-202209' },
+    { sid:'443',name:'科索沃出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201807-202209' },
+  ]},
+  { group: '马拉维', items: [
+    { sid:'591',name:'马拉维',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'593',name:'马拉维出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '赞比亚', items: [
+    { sid:'911',name:'赞比亚',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202312' },
+    { sid:'913',name:'赞比亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202312' },
+  ]},
+  { group: '莱索托', items: [
+    { sid:'821',name:'莱索托',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'823',name:'莱索托出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '肯尼亚', items: [
+    { sid:'742',name:'肯尼亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'744',name:'肯尼亚过境',type:'过境数据',transport:'陆运',update:'按月更新',range:'202201-202602' },
+    { sid:'741',name:'肯尼亚旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202205' },
+    { sid:'743',name:'肯尼亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+  ]},
+  { group: '纳米比亚', items: [
+    { sid:'901',name:'纳米比亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'903',name:'纳米比亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '科特迪瓦', items: [
+    { sid:'921',name:'科特迪瓦',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'923',name:'科特迪瓦出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+  ]},
+  { group: '津巴布韦', items: [
+    { sid:'881',name:'津巴布韦',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202307' },
+    { sid:'883',name:'津巴布韦出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202001-202307' },
+  ]},
+  { group: '布隆迪', items: [
+    { sid:'775',name:'布隆迪',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'777',name:'布隆迪出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202211' },
+  ]},
+  { group: '尼日尔', items: [
+    { sid:'261',name:'尼日尔',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202211' },
+    { sid:'263',name:'尼日尔出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202211' },
+  ]},
+  { group: '尼日利亚', items: [
+    { sid:'801',name:'尼日利亚',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202509' },
+    { sid:'803',name:'尼日利亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202509' },
+  ]},
+  { group: '安哥拉', items: [
+    { sid:'225',name:'安哥拉海运进口',type:'提单数据',transport:'海运',update:'按月更新',range:'202101-202602' },
+    { sid:'221',name:'安哥拉进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202504' },
+    { sid:'227',name:'安哥拉海运出口',type:'提单数据',transport:'海运',update:'按月更新',range:'202101-202602' },
+    { sid:'223',name:'安哥拉出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202504' },
+  ]},
+  { group: '塞内加尔', items: [
+    { sid:'271',name:'塞内加尔',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202312' },
+    { sid:'273',name:'塞内加尔出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202312' },
+  ]},
+  { group: '埃塞俄比亚', items: [
+    { sid:'690',name:'埃塞俄比亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'693',name:'埃塞俄比亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+  ]},
+  { group: '坦桑尼亚', items: [
+    { sid:'752',name:'坦桑尼亚新版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202602' },
+    { sid:'755',name:'坦桑尼亚新版过境',type:'过境数据',transport:'全运输',update:'按周更新',range:'202201-202602' },
+    { sid:'751',name:'坦桑尼亚',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202305' },
+    { sid:'754',name:'坦桑尼亚新版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202602' },
+    { sid:'753',name:'坦桑尼亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202305' },
+  ]},
+  { group: '圣多美和普林西比', items: [
+    { sid:'581',name:'圣多美和普林西比',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'583',name:'圣多美和普林西比出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+  ]},
+  { group: '喀麦隆', items: [
+    { sid:'191',name:'喀麦隆',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'193',name:'喀麦隆出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '卢旺达', items: [
+    { sid:'961',name:'卢旺达',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+  ]},
+  { group: '博茨瓦纳', items: [
+    { sid:'791',name:'博茨瓦纳',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202511' },
+    { sid:'793',name:'博茨瓦纳出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202511' },
+  ]},
+  { group: '南非', items: [
+    { sid:'851',name:'南非进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+    { sid:'853',name:'南非出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '加纳', items: [
+    { sid:'781',name:'加纳',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'783',name:'加纳出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+  ]},
+  { group: '利比里亚', items: [
+    { sid:'771',name:'利比里亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202601' },
+    { sid:'773',name:'利比里亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202601' },
+  ]},
+  { group: '乍得', items: [
+    { sid:'241',name:'乍得',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202206' },
+    { sid:'243',name:'乍得出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202206' },
+  ]},
+  { group: '乌干达', items: [
+    { sid:'731',name:'乌干达',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202601' },
+    { sid:'735',name:'乌干达转口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202601' },
+    { sid:'733',name:'乌干达出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202601' },
+  ]},
+  { group: '刚果(金)', items: [
+    { sid:'971',name:'刚果(金)',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
+    { sid:'973',name:'刚果(金)出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202602' },
+  ]},
+  { group: '非洲自贸区', items: [
+    { sid:'981',name:'非洲自贸区',type:'关单数据',transport:'陆运',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '中美洲', items: [
+    { sid:'621',name:'中美洲新版',type:'过境数据',transport:'陆运',update:'不定期',range:'202201-202603' },
+    { sid:'620',name:'中美洲',type:'过境数据',transport:'陆运',update:'一次性',range:'201601-202101' },
+  ]},
   { group: '环球海运', items: [
     { sid:'700',name:'环球海运',type:'海运提单',transport:'海运',update:'不定期',range:'201601-202603' },
     { sid:'670',name:'欧亚航线',type:'提单数据',transport:'海运',update:'一次性',range:'201501-202012' },
-  ]},
-  { group: '更多', items: [
-    { sid:'450',name:'萨尔瓦多',type:'关单数据',transport:'全运输',update:'按天更新',range:'200801-202603' },
-    { sid:'560',name:'哥斯达黎加',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
-    { sid:'281',name:'乌拉圭进口',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
-    { sid:'201',name:'多米尼加进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
-    { sid:'831',name:'孟加拉进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
-    { sid:'660',name:'斯里兰卡进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
     { sid:'704',name:'危险品提单',type:'提单数据',transport:'海运',update:'不定期',range:'202202-202603' },
+  ]},
+  { group: '独联体', items: [
+    { sid:'680',name:'独联体',type:'过境数据',transport:'陆运',update:'不定期',range:'201601-202411' },
   ]},
 ];
 
