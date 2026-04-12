@@ -391,6 +391,21 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
   cursor: pointer; text-decoration: none; margin-top: 8px;
 }
 .modal-apollo-btn:hover { opacity: 0.9; }
+.crm-bar {
+  display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+}
+.crm-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 7px 14px; font-size: 12px; font-weight: 600;
+  border: none; border-radius: 6px; cursor: pointer; color: #fff;
+}
+.crm-btn-excel { background: linear-gradient(135deg, #217346, #185c37); }
+.crm-btn-excel:hover { opacity: 0.9; }
+.crm-btn-copy { background: linear-gradient(135deg, #0e7c7b, #0a5f5e); }
+.crm-btn-copy:hover { opacity: 0.9; }
+.crm-btn-zoho { background: linear-gradient(135deg, #e42527, #c41e20); }
+.crm-btn-zoho:hover { opacity: 0.9; }
+.crm-ok { color: #2d8a4e; font-size: 12px; font-weight: 600; margin-left: 6px; }
 
 /* 联系方式卡片 */
 .contact-section { margin-bottom: 16px; }
@@ -506,6 +521,7 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
   </div>
   <div class="topbar-right">
     <input type="password" class="token-input" id="tokenInput" placeholder="API Token..." />
+    <input type="password" class="token-input" id="zohoTokenInput" placeholder="Zoho CRM Token..." style="width:180px;" title="Zoho CRM Access Token" />
     <button class="btn-sm" onclick="saveToken()">保存</button>
   </div>
 </div>
@@ -1165,16 +1181,26 @@ let allDsItems = [];
 
 // ========== Token ==========
 function getToken() { return localStorage.getItem('kicky_token') || ''; }
+function getZohoToken() { return localStorage.getItem('kicky_zoho_token') || ''; }
 function saveToken() {
   const t = document.getElementById('tokenInput').value.trim();
-  if (!t) return;
-  localStorage.setItem('kicky_token', t);
-  document.getElementById('tokenInput').style.borderColor = 'var(--green)';
-  setTimeout(() => document.getElementById('tokenInput').style.borderColor = '', 1500);
+  if (t) {
+    localStorage.setItem('kicky_token', t);
+    document.getElementById('tokenInput').style.borderColor = 'var(--green)';
+    setTimeout(() => document.getElementById('tokenInput').style.borderColor = '', 1500);
+  }
+  const zt = document.getElementById('zohoTokenInput').value.trim();
+  if (zt) {
+    localStorage.setItem('kicky_zoho_token', zt);
+    document.getElementById('zohoTokenInput').style.borderColor = 'var(--green)';
+    setTimeout(() => document.getElementById('zohoTokenInput').style.borderColor = '', 1500);
+  }
 }
 function loadToken() {
   const t = getToken();
   if (t) document.getElementById('tokenInput').value = t;
+  const zt = getZohoToken();
+  if (zt) document.getElementById('zohoTokenInput').value = zt;
 }
 
 // ========== 搜索历史 ==========
@@ -1958,6 +1984,17 @@ function openCompanyModal(rawName, field) {
     html += `</div>`;
   }
 
+  // CRM 推送
+  html += `<div class="modal-section">
+    <div class="modal-section-title">📤 推送到 Zoho CRM</div>
+    <div class="crm-bar">
+      <button class="crm-btn crm-btn-zoho" id="crmPushBtn" onclick="pushToZohoCRM('${rawName}','${field}')">🚀 一键推送到 Zoho CRM</button>
+      <button class="crm-btn crm-btn-excel" onclick="exportCompanyToExcel('${rawName}','${field}')">📊 导出 Excel</button>
+    </div>
+    <div id="crmPushStatus"></div>
+    <p style="font-size:11px;color:#8a9e8a;margin-top:6px;">需要在右上角填入 Zoho CRM Token 并保存。<a href="https://api-console.zoho.com/" target="_blank" style="color:#0e7c7b;">获取 Token</a></p>
+  </div>`;
+
   // 联系方式（API 查询）
   html += `<div class="modal-section contact-section">
     <div class="modal-section-title">📞 联系方式（海关数据库）</div>
@@ -2035,6 +2072,122 @@ function openCompanyModal(rawName, field) {
 
 function closeCompanyModal() {
   document.getElementById('companyModal').style.display = 'none';
+}
+
+// ========== Zoho CRM 推送 ==========
+async function pushToZohoCRM(rawName, field) {
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+  const zohoToken = getZohoToken();
+  const statusEl = document.getElementById('crmPushStatus');
+  const btn = document.getElementById('crmPushBtn');
+
+  if (!zohoToken) {
+    statusEl.innerHTML = '<p style="color:var(--red);font-size:12px;margin-top:6px;">⚠️ 请先在右上角填入 Zoho CRM Token 并点保存</p>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ 推送中...';
+  statusEl.innerHTML = '';
+
+  // 收集该公司的交易数据
+  const records = (filteredRecords.length ? filteredRecords : currentRecords)
+    .filter(r => (r.Importer1||'') === company || (r.Exporter1||'') === company);
+
+  const totalVal = records.reduce((s, r) => s + (parseFloat(r.TotalPrice)||0), 0);
+  const totalQty = records.reduce((s, r) => s + (parseFloat(r.QTY)||0), 0);
+  const countries = [...new Set(records.map(r => r.OrgCountry || r.DesCountry).filter(Boolean))];
+  const products = [...new Set(records.map(r => r.ProductDesc1).filter(Boolean))].slice(0, 5);
+  const dateRange = records.map(r => r.Dates || r.Months).filter(Boolean).sort();
+  const domain = guessDomain(company);
+
+  // 构造 Zoho CRM Lead 数据
+  const leadData = {
+    data: [{
+      Company: company,
+      Last_Name: company.split(' ').slice(-1)[0] || company,
+      First_Name: company.split(' ').slice(0, -1).join(' ') || '',
+      Lead_Source: 'Trade Data',
+      Description: [
+        `海关数据查询结果`,
+        `交易记录数: ${records.length}`,
+        `交易总额: $${totalVal.toLocaleString('en-US',{maximumFractionDigits:2})}`,
+        `总数量: ${totalQty.toLocaleString()}`,
+        countries.length ? `涉及国家: ${countries.join(', ')}` : '',
+        dateRange.length ? `交易时间: ${dateRange[0]} ~ ${dateRange[dateRange.length-1]}` : '',
+        products.length ? `主要产品: ${products.join(' | ')}` : '',
+      ].filter(Boolean).join('\n'),
+      Website: domain ? `https://${domain}` : '',
+      Email: domain ? `info@${domain}` : '',
+      Country: countries[0] || '',
+    }],
+  };
+
+  try {
+    const resp = await fetch(`${BASE}/zoho/crm/v2/Leads`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Zoho-oauthtoken ${zohoToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(leadData),
+    });
+
+    const result = await resp.json();
+
+    if (resp.ok && result.data && result.data[0] && result.data[0].status === 'success') {
+      btn.textContent = '✅ 推送成功';
+      btn.style.background = '#2d8a4e';
+      statusEl.innerHTML = `<p style="color:#2d8a4e;font-size:12px;margin-top:6px;">✅ 已创建线索: ${company}</p>`;
+    } else {
+      const errMsg = result.data ? result.data[0]?.message : (result.message || JSON.stringify(result));
+      throw new Error(errMsg);
+    }
+  } catch (e) {
+    btn.textContent = '🚀 一键推送到 Zoho CRM';
+    btn.disabled = false;
+    statusEl.innerHTML = `<p style="color:var(--red);font-size:12px;margin-top:6px;">❌ 推送失败: ${e.message}</p>`;
+  }
+}
+
+function exportCompanyToExcel(rawName, field) {
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+  const records = (filteredRecords.length ? filteredRecords : currentRecords)
+    .filter(r => (r.Importer1||'') === company || (r.Exporter1||'') === company);
+
+  const totalVal = records.reduce((s, r) => s + (parseFloat(r.TotalPrice)||0), 0);
+  const countries = [...new Set(records.map(r => r.OrgCountry || r.DesCountry).filter(Boolean))];
+  const products = [...new Set(records.map(r => r.ProductDesc1).filter(Boolean))].slice(0, 5);
+  const domain = guessDomain(company);
+
+  // Zoho CRM 导入格式
+  const row = {
+    'Company': company,
+    'Last Name': company,
+    'Email': domain ? `info@${domain}` : '',
+    'Website': domain ? `https://${domain}` : '',
+    'Lead Source': 'Trade Data',
+    'Country': countries[0] || '',
+    'Description': `交易${records.length}次, 总额$${totalVal.toFixed(0)}, 产品: ${products.join('; ')}`,
+  };
+
+  // 也导出每条交易记录
+  const tradeRows = records.map(r => ({
+    '公司': company, '日期': r.Dates || r.Months || '', '产品': r.ProductDesc1 || '',
+    'HS编码': r.HSCODE || '', '数量': r.QTY || '', '重量KG': r.WT || '',
+    '总价USD': r.TotalPrice || '', '单价USD': r.UnitPrice || '',
+    '原产国': r.OrgCountry || '', '目的国': r.DesCountry || '',
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.json_to_sheet([row]);
+  ws1['!cols'] = [{wch:30},{wch:30},{wch:25},{wch:25},{wch:12},{wch:12},{wch:60}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Zoho导入');
+  if (tradeRows.length) {
+    const ws2 = XLSX.utils.json_to_sheet(tradeRows);
+    XLSX.utils.book_append_sheet(wb, ws2, '交易明细');
+  }
+  XLSX.writeFile(wb, `CRM_${company.substring(0,20)}.xlsx`);
 }
 
 function copyEmail(email) {
