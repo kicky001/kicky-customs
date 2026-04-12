@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kicky 海关数据查询系统</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg-primary: #f5f7f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f4f0;
+  --bg-card: #ffffff;
+  --border: #d4ddd4;
+  --text-primary: #1a2e1a;
+  --text-secondary: #4a6a4a;
+  --text-muted: #8a9e8a;
+  --accent: #2d8a4e;
+  --accent-hover: #36a35c;
+  --green: #2d8a4e;
+  --green-light: #1b7a3a;
+  --orange: #c47f17;
+  --red: #d32f2f;
+  --cyan: #0e7c7b;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); height: 100vh; overflow: hidden; }
+
+/* ========== 顶部导航 ========== */
+.topbar {
+  height: 42px; background: linear-gradient(135deg, #2d8a4e, #1b6b38); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-logo { font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 6px; }
+.topbar-logo svg { width: 20px; height: 20px; }
+.topbar-center { display: flex; align-items: center; gap: 16px; font-size: 12px; }
+.queue-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.queue-item { display: flex; align-items: center; gap: 2px; color: rgba(255,255,255,0.85); }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.token-input { width: 220px; padding: 4px 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; color: #fff; font-size: 12px; outline: none; }
+.token-input::placeholder { color: rgba(255,255,255,0.5); }
+.token-input:focus { border-color: rgba(255,255,255,0.6); }
+.btn-sm { padding: 4px 10px; font-size: 12px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; border-radius: 4px; cursor: pointer; }
+.btn-sm:hover { background: rgba(255,255,255,0.2); }
+
+/* ========== 三栏布局 ========== */
+.layout { display: flex; height: calc(100vh - 42px); }
+
+/* ========== 左侧栏 ========== */
+.sidebar-left {
+  width: 260px; min-width: 260px; background: #ffffff; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto; box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+}
+.sidebar-left::-webkit-scrollbar { width: 5px; }
+.sidebar-left::-webkit-scrollbar-thumb { background: #b8ccb8; border-radius: 3px; }
+.sidebar-left::-webkit-scrollbar-thumb:hover { background: #8aaa8a; }
+.sidebar-left::-webkit-scrollbar-track { background: transparent; }
+.sidebar-section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.sidebar-section:last-child { border-bottom: none; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.sidebar-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.sidebar-input {
+  width: 100%; padding: 7px 10px; background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text-primary); font-size: 13px; outline: none;
+}
+.sidebar-input:focus { border-color: var(--accent); }
+.sidebar-input::placeholder { color: var(--text-muted); }
+.sidebar-select {
+  width: 100%; padding: 7px 10px; background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text-primary); font-size: 13px; outline: none; appearance: auto;
+}
+.search-btn {
+  width: 100%; padding: 8px; background: var(--accent); color: #fff; border: none;
+  border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 8px;
+}
+.search-btn:hover { background: var(--accent-hover); }
+.search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 搜索历史 */
+.history-header { display: flex; justify-content: space-between; align-items: center; }
+.history-clear { font-size: 11px; color: var(--accent); cursor: pointer; }
+.history-clear:hover { color: var(--accent-hover); }
+.history-list { max-height: 80px; overflow-y: auto; }
+.history-item {
+  display: flex; align-items: center; justify-content: space-between; padding: 3px 0;
+  font-size: 12px; color: var(--text-secondary); cursor: pointer;
+}
+.history-item:hover { color: var(--accent); }
+.history-item .h-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-item .h-meta { font-size: 10px; color: var(--text-muted); margin-left: 6px; white-space: nowrap; }
+.history-item .h-close { margin-left: 4px; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+.history-item .h-close:hover { color: var(--red); }
+
+/* 数据源树 */
+.ds-search { margin-bottom: 6px; }
+.ds-tree { flex: 1; overflow-y: auto; font-size: 12px; }
+.ds-tree::-webkit-scrollbar { width: 4px; }
+.ds-tree::-webkit-scrollbar-thumb { background: #b8ccb8; border-radius: 2px; }
+.ds-group-header {
+  padding: 4px 6px; color: var(--accent); font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 4px; font-size: 12px;
+}
+.ds-group-header:hover { color: var(--accent-hover); }
+.ds-group-header .arrow { transition: transform 0.2s; font-size: 10px; }
+.ds-group-header .arrow.open { transform: rotate(90deg); }
+.ds-group-items { padding-left: 16px; }
+.ds-group-items.collapsed { display: none; }
+.ds-item {
+  padding: 3px 8px; color: var(--text-secondary); cursor: pointer; border-radius: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ds-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.ds-item.active { background: var(--accent); color: #fff; }
+
+/* 数据源详情 */
+.ds-detail {
+  padding: 8px 10px; background: var(--bg-tertiary); border-radius: 4px; margin-top: 8px;
+  font-size: 11px; color: var(--text-secondary); line-height: 1.6; flex-shrink: 0;
+}
+.ds-detail .ds-detail-name { color: var(--cyan); font-weight: 600; margin-bottom: 2px; }
+
+/* 日期 */
+.date-row { display: flex; gap: 8px; align-items: center; }
+.date-row .sidebar-input { flex: 1; }
+.date-clear { font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; }
+.date-clear:hover { color: var(--red); }
+
+/* ========== 主内容区 ========== */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* 缓存/状态提示 */
+.result-banner {
+  margin: 12px 16px 0; padding: 10px 14px; border-radius: 6px;
+  font-size: 13px; display: flex; align-items: center; gap: 8px;
+}
+.result-banner.cache { background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20; }
+.result-banner.loading { background: #e3f2e6; border: 1px solid #a5d6a7; color: #2d8a4e; }
+.result-banner.error { background: #fbe9e7; border: 1px solid #ef9a9a; color: #c62828; }
+.banner-icon { font-size: 18px; }
+
+/* 结果头 */
+.result-header {
+  display: flex; align-items: center; justify-content: space-between; padding: 10px 16px;
+  flex-wrap: wrap; gap: 8px;
+}
+.result-title { font-size: 15px; font-weight: 600; }
+.result-meta { display: flex; align-items: center; gap: 10px; }
+.badge {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px;
+  font-size: 12px; font-weight: 500;
+}
+.badge-green { background: #e8f5e9; color: #1b7a3a; }
+.badge-blue { background: #e3f2e6; color: #2d8a4e; }
+.badge-gray { background: #f0f4f0; color: var(--text-secondary); }
+
+.result-actions { display: flex; gap: 6px; }
+.btn-action {
+  padding: 5px 12px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-secondary);
+  color: var(--text-secondary); border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;
+}
+.btn-action:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.btn-action.active { border-color: var(--accent); color: var(--accent); }
+.btn-export { border-color: #2d8a4e; color: #2d8a4e; }
+.btn-export:hover { background: #e8f5e9; }
+
+/* 表格 */
+.table-container { flex: 1; overflow: auto; padding: 0 16px 16px; }
+.table-container::-webkit-scrollbar { width: 6px; height: 6px; }
+.table-container::-webkit-scrollbar-thumb { background: #b8ccb8; border-radius: 3px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { position: sticky; top: 0; z-index: 10; }
+th {
+  padding: 8px 10px; text-align: left; font-weight: 600; color: #2d6a3e;
+  background: #e8f0e8; border-bottom: 2px solid #c4d9c4;
+  white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px;
+}
+td { padding: 8px 10px; border-bottom: 1px solid #e8ede8; color: var(--text-primary); }
+tr:hover td { background: #e8f5e9; }
+td.desc { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.price { text-align: right; font-family: 'SF Mono', 'Courier New', monospace; color: #1b7a3a; font-weight: 600; }
+td.company { color: var(--text-primary); min-width: 200px; }
+td.company .expand-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; background: #e8f5e9;
+  color: #2d8a4e; font-size: 14px; cursor: pointer; margin-right: 4px; vertical-align: middle;
+  border: 1px solid #a5d6a7; line-height: 1;
+}
+td.company .expand-btn:hover { background: #c8e6c9; }
+td.company .exclude-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff3e0;
+  color: #e65100; font-size: 14px; cursor: pointer; margin-right: 4px; vertical-align: middle;
+  border: 1px solid #ffcc80; line-height: 1;
+}
+td.company .exclude-btn:hover { background: #ffe0b2; color: #bf360c; }
+td.company .company-link { color: var(--text-primary); text-decoration: none; cursor: pointer; }
+td.company .company-link:hover { color: var(--accent); text-decoration: underline; }
+
+/* 翻页 */
+.pagination-bar {
+  display: flex; align-items: center; justify-content: center; padding: 10px 16px;
+  gap: 6px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.page-btn {
+  padding: 4px 12px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-secondary);
+  color: var(--text-secondary); border-radius: 4px; cursor: pointer;
+}
+.page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.page-info { font-size: 12px; color: var(--text-muted); margin: 0 8px; }
+
+/* 空/加载状态 */
+.state-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); }
+.state-empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+.state-empty p { font-size: 14px; }
+.state-empty .sub { font-size: 12px; margin-top: 6px; }
+.spinner { width: 28px; height: 28px; border: 3px solid #c4d9c4; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ========== 右侧 AI 栏 ========== */
+.sidebar-right {
+  width: 320px; min-width: 320px; background: #ffffff; border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; box-shadow: -2px 0 8px rgba(0,0,0,0.04);
+}
+.sidebar-right.collapsed { width: 0; min-width: 0; border: none; }
+.ai-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ai-header h3 { font-size: 14px; font-weight: 600; }
+.ai-toggle { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+.ai-toggle:hover { color: var(--text-primary); }
+.ai-body { flex: 1; overflow-y: auto; padding: 14px; }
+.ai-body::-webkit-scrollbar { width: 4px; }
+.ai-body::-webkit-scrollbar-thumb { background: #b8ccb8; border-radius: 2px; }
+.ai-message {
+  font-size: 13px; line-height: 1.7; color: var(--text-secondary);
+  white-space: pre-wrap; word-break: break-word;
+}
+.ai-message h4 { color: var(--orange); font-size: 13px; margin: 10px 0 4px; }
+.ai-message a { color: var(--accent-hover); text-decoration: none; }
+.ai-message a:hover { text-decoration: underline; }
+.ai-message .email { color: var(--cyan); }
+.ai-message ul { padding-left: 16px; }
+.ai-input-area {
+  padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 6px;
+}
+.ai-input {
+  flex: 1; padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text-primary); font-size: 12px; outline: none;
+}
+.ai-input:focus { border-color: var(--accent); }
+.ai-send { padding: 6px 12px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+/* 列设置弹窗 */
+.col-settings {
+  position: absolute; top: 36px; right: 0; background: #fff; border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px; z-index: 50; min-width: 160px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.col-settings label { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+.col-settings label:hover { color: var(--text-primary); }
+
+/* 筛选过滤栏 */
+.filter-bar {
+  margin: 0 16px; padding: 10px 12px; background: #f8faf8; border: 1px solid #d4ddd4;
+  border-radius: 6px; font-size: 12px;
+}
+.filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.filter-group { display: flex; align-items: center; gap: 4px; }
+.filter-label { font-weight: 600; color: #2d6a3e; white-space: nowrap; font-size: 12px; }
+.filter-select {
+  padding: 5px 8px; border: 1px solid #c4d9c4; border-radius: 4px;
+  background: #fff; color: #333; font-size: 12px; outline: none; min-width: 140px;
+}
+.filter-select:focus { border-color: var(--accent); }
+.filter-count { font-size: 11px; color: #2d8a4e; font-weight: 500; margin-left: auto; }
+.exclude-label { font-weight: 600; color: #e65100; white-space: nowrap; font-size: 12px; }
+.exclude-input {
+  flex: 1; padding: 5px 10px; border: 1px solid #ffe082; border-radius: 4px;
+  background: #fffde7; color: #333; font-size: 12px; outline: none;
+}
+.exclude-input:focus { border-color: #ffb300; }
+.exclude-input::placeholder { color: #bbb; }
+.exclude-add-btn {
+  padding: 5px 12px; background: #ff9800; color: #fff; border: none;
+  border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;
+}
+.exclude-add-btn:hover { background: #f57c00; }
+.exclude-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.exclude-tags:empty { margin-top: 0; }
+.exclude-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; background: #fff3e0; border: 1px solid #ffcc80;
+  border-radius: 12px; font-size: 11px; color: #e65100;
+}
+.exclude-tag .tag-close {
+  cursor: pointer; font-size: 14px; color: #e65100; line-height: 1;
+}
+.exclude-tag .tag-close:hover { color: #bf360c; }
+.exclude-count { margin-left: 6px; color: #9e9d24; font-size: 11px; font-style: italic; }
+
+/* Apollo 卡片 */
+.apollo-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; margin: 4px 0; background: var(--bg-tertiary);
+  border-radius: 5px; border: 1px solid var(--border); gap: 6px;
+}
+.apollo-name { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apollo-btn {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 3px 8px; font-size: 11px; white-space: nowrap;
+  background: #e8f5e9; color: #2d8a4e; border: 1px solid #a5d6a7;
+  border-radius: 4px; text-decoration: none; cursor: pointer;
+}
+.apollo-btn:hover { background: #c8e6c9; color: #1b6b38; }
+.apollo-btn-lg {
+  display: inline-block; margin-top: 6px;
+  padding: 7px 14px; font-size: 12px; font-weight: 600;
+  background: linear-gradient(135deg, #2d8a4e, #1b6b38); color: #fff;
+  border: none; border-radius: 5px; text-decoration: none; cursor: pointer;
+}
+.apollo-btn-lg:hover { opacity: 0.9; }
+
+/* 公司详情弹窗 */
+.company-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.company-modal {
+  background: #fff; border-radius: 10px; width: 680px; max-width: 90vw;
+  max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: linear-gradient(135deg, #2d8a4e, #1b6b38);
+  color: #fff;
+}
+.modal-header h3 { font-size: 15px; font-weight: 600; }
+.modal-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+.modal-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.modal-body::-webkit-scrollbar { width: 4px; }
+.modal-body::-webkit-scrollbar-thumb { background: #b8ccb8; border-radius: 2px; }
+
+.modal-section { margin-bottom: 16px; }
+.modal-section-title {
+  font-size: 13px; font-weight: 700; color: #2d6a3e;
+  margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #e8f5e9;
+  display: flex; align-items: center; gap: 6px;
+}
+.email-grid { display: flex; flex-direction: column; gap: 4px; }
+.email-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; background: #f8faf8; border: 1px solid #e0e8e0;
+  border-radius: 5px; font-size: 12px;
+}
+.email-addr { color: #0e7c7b; font-family: 'SF Mono', monospace; font-weight: 500; }
+.email-copy {
+  padding: 2px 8px; background: #e8f5e9; color: #2d8a4e; border: 1px solid #a5d6a7;
+  border-radius: 3px; cursor: pointer; font-size: 11px;
+}
+.email-copy:hover { background: #c8e6c9; }
+.email-note { font-size: 11px; color: #8a9e8a; margin-top: 4px; font-style: italic; }
+
+.bg-links { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.bg-link {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; background: #f8faf8; border: 1px solid #e0e8e0;
+  border-radius: 6px; text-decoration: none; color: #333; font-size: 12px;
+  transition: all 0.15s;
+}
+.bg-link:hover { background: #e8f5e9; border-color: #a5d6a7; }
+.bg-link .bg-icon { font-size: 18px; }
+.bg-link .bg-text { display: flex; flex-direction: column; }
+.bg-link .bg-title { font-weight: 600; color: #2d6a3e; }
+.bg-link .bg-desc { font-size: 10px; color: #8a9e8a; }
+
+.trade-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.trade-card {
+  padding: 10px; background: #f8faf8; border: 1px solid #e0e8e0;
+  border-radius: 6px; text-align: center;
+}
+.trade-card .trade-value { font-size: 18px; font-weight: 700; color: #1b7a3a; }
+.trade-card .trade-label { font-size: 11px; color: #8a9e8a; margin-top: 2px; }
+
+.modal-apollo-btn {
+  display: block; width: 100%; padding: 10px; text-align: center;
+  background: linear-gradient(135deg, #2d8a4e, #1b6b38); color: #fff;
+  border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; text-decoration: none; margin-top: 8px;
+}
+.modal-apollo-btn:hover { opacity: 0.9; }
+
+/* 联系方式卡片 */
+.contact-section { margin-bottom: 16px; }
+.contact-loading { padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px; }
+.contact-card {
+  padding: 10px 14px; background: #f0faf3; border: 1px solid #a5d6a7;
+  border-radius: 6px; margin-bottom: 6px;
+}
+.contact-card .contact-row {
+  display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px;
+}
+.contact-card .contact-label { font-weight: 600; color: #2d6a3e; min-width: 50px; }
+.contact-card .contact-value { color: var(--text-primary); word-break: break-all; }
+.contact-card .contact-value a { color: #0e7c7b; text-decoration: none; }
+.contact-card .contact-value a:hover { text-decoration: underline; }
+.contact-copy-btn {
+  padding: 1px 6px; background: #e8f5e9; color: #2d8a4e; border: 1px solid #a5d6a7;
+  border-radius: 3px; cursor: pointer; font-size: 10px; flex-shrink: 0;
+}
+.contact-copy-btn:hover { background: #c8e6c9; }
+.contact-empty { padding: 10px; text-align: center; color: var(--text-muted); font-size: 12px; background: #fafafa; border-radius: 6px; border: 1px dashed #d4ddd4; }
+.contact-fetch-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px; background: #0e7c7b; color: #fff; border: none;
+  border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 500;
+}
+.contact-fetch-btn:hover { background: #0a6565; }
+.contact-fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 视图切换 */
+.view-toggle { display: flex; gap: 2px; background: var(--bg-tertiary); border-radius: 5px; padding: 2px; }
+.view-toggle-btn {
+  padding: 4px 12px; font-size: 12px; border: none; background: transparent;
+  color: var(--text-muted); border-radius: 4px; cursor: pointer;
+}
+.view-toggle-btn.active { background: #fff; color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* 公司聚合视图 */
+.company-view { padding: 16px; overflow-y: auto; height: 100%; }
+.cv-center-card {
+  max-width: 320px; margin: 0 auto 24px; padding: 14px 20px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: #fff;
+  border-radius: 12px; text-align: center; box-shadow: 0 4px 16px rgba(238,90,36,0.3);
+}
+.cv-center-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.cv-center-meta { font-size: 12px; opacity: 0.85; }
+.cv-section { margin-bottom: 20px; }
+.cv-section-title {
+  font-size: 13px; font-weight: 700; color: #2d6a3e; margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 2px solid #e8f5e9;
+  display: flex; align-items: center; gap: 6px;
+}
+.cv-section-title .cv-count { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.cv-company-list { display: flex; flex-direction: column; gap: 6px; }
+.cv-company-card {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: #fff; border: 1px solid #e0e8e0; border-radius: 8px;
+  cursor: pointer; transition: all 0.15s;
+}
+.cv-company-card:hover { border-color: var(--accent); background: #f0faf3; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.cv-flag { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+.cv-country-tag {
+  font-size: 10px; color: #fff; background: #8a9e8a; padding: 1px 6px;
+  border-radius: 3px; flex-shrink: 0;
+}
+.cv-company-info { flex: 1; min-width: 0; }
+.cv-company-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-company-stats { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.cv-company-stats b { color: var(--accent); }
+.cv-badge {
+  padding: 3px 10px; background: #ffeaea; color: #ee5a24; border-radius: 12px;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.cv-contact-btn {
+  padding: 3px 8px; background: #e3f2e6; color: #0e7c7b; border: 1px solid #a5d6a7;
+  border-radius: 4px; font-size: 11px; cursor: pointer; flex-shrink: 0;
+}
+.cv-contact-btn:hover { background: #c8e6c9; }
+.cv-contact-inline {
+  margin-top: 8px; padding: 8px 12px; background: #f0faf3; border: 1px solid #a5d6a7;
+  border-radius: 6px; font-size: 12px; display: none;
+}
+.cv-contact-inline.show { display: block; }
+.cv-contact-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.cv-contact-row .cl { font-weight: 600; color: #2d6a3e; min-width: 40px; }
+.cv-contact-row a { color: #0e7c7b; text-decoration: none; }
+.cv-contact-row a:hover { text-decoration: underline; }
+
+/* 响应式 */
+@media (max-width: 1200px) { .sidebar-right { display: none; } }
+@media (max-width: 900px) { .sidebar-left { width: 220px; min-width: 220px; } }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+      海关数据查询系统
+    </div>
+  </div>
+  <div class="topbar-center" id="queueStatus">
+    <span class="queue-item"><span class="queue-dot" style="background:var(--green)"></span> 等待 <b id="qPending">-</b></span>
+    <span class="queue-item"><span class="queue-dot" style="background:var(--orange)"></span> 处理中 <b id="qProcessing">-</b></span>
+    <span class="queue-item"><span class="queue-dot" style="background:var(--accent)"></span> 完成 <b id="qDone">-</b></span>
+    <span class="queue-item"><span class="queue-dot" style="background:var(--cyan)"></span> 缓存 <b id="qCache">-</b></span>
+  </div>
+  <div class="topbar-right">
+    <input type="password" class="token-input" id="tokenInput" placeholder="API Token..." />
+    <button class="btn-sm" onclick="saveToken()">保存</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ========== 左侧栏 ========== -->
+  <div class="sidebar-left">
+    <!-- 关键词 -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">关键词 <span style="color:var(--red)">*</span></div>
+      <input type="text" class="sidebar-input" id="keyword" placeholder="输入产品、公司、HS编码..." />
+      <button class="search-btn" id="searchBtn" onclick="doSearch(1)">搜 索</button>
+    </div>
+
+    <!-- 搜索历史 -->
+    <div class="sidebar-section" id="historySection" style="display:none;">
+      <div class="history-header">
+        <span class="sidebar-label" style="margin:0;">搜索历史</span>
+        <span class="history-clear" onclick="clearHistory()">清空</span>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- 搜索字段 -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">搜索字段</div>
+      <select class="sidebar-select" id="field">
+        <option value="ProductDesc1">产品描述 (ProductDesc1)</option>
+        <option value="Importer1">进口商 (Importer1)</option>
+        <option value="Exporter1">出口商 (Exporter1)</option>
+        <option value="HSCODE">HS编码 (HSCODE)</option>
+        <option value="OrgCountry">原产国 (OrgCountry)</option>
+        <option value="LdPort">装货港 (LdPort)</option>
+        <option value="DesPort">目的港 (DesPort)</option>
+      </select>
+    </div>
+
+    <!-- 数据源 -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">数据源</div>
+      <input type="text" class="sidebar-input ds-search" id="dsSearch" placeholder="搜索数据源..." oninput="filterDS()" />
+      <div class="ds-tree" id="dsTree"></div>
+      <div class="ds-detail" id="dsDetail">
+        <div class="ds-detail-name" id="dsDetailName">美国 (提单·海运·按天更新)</div>
+        <div>类型: 提单数据 &nbsp; 运输: 海运 &nbsp; 更新: 按天</div>
+        <div>范围: 201401-202603</div>
+      </div>
+    </div>
+
+    <!-- 日期范围 -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">日期范围</div>
+      <div class="date-row">
+        <input type="text" class="sidebar-input" id="dateStart" placeholder="开始日期" />
+        <input type="text" class="sidebar-input" id="dateEnd" placeholder="结束日期" />
+      </div>
+      <div style="margin-top:4px;text-align:right;">
+        <span class="date-clear" onclick="document.getElementById('dateStart').value='';document.getElementById('dateEnd').value='';">✕ 清除日期</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 主内容区 ========== -->
+  <div class="main-content">
+    <div id="bannerArea"></div>
+
+    <div class="result-header" id="resultHeader" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="result-title">查询结果</span>
+        <div class="result-meta">
+          <span class="badge badge-green" id="totalBadge"></span>
+          <span class="badge badge-blue" id="timeBadge"></span>
+          <span class="badge badge-gray" id="pageBadge"></span>
+        </div>
+      </div>
+      <div class="result-actions">
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" id="viewTable" onclick="switchView('table')">📋 表格</button>
+          <button class="view-toggle-btn" id="viewCompany" onclick="switchView('company')">🏢 公司</button>
+        </div>
+        <div style="position:relative;">
+          <button class="btn-action" onclick="toggleColSettings()">⚙ 列设置</button>
+          <div class="col-settings" id="colSettings" style="display:none;"></div>
+        </div>
+        <button class="btn-action btn-export" id="exportBtn" onclick="exportCurrentPage()">⬇ 导出当前页</button>
+        <button class="btn-action btn-export" id="exportAllBtn" onclick="exportAllPages()">⬇ 导出全部</button>
+      </div>
+    </div>
+
+    <!-- 排除过滤栏 -->
+    <!-- 筛选栏 -->
+    <div class="filter-bar" id="filterBar" style="display:none;">
+      <div class="filter-row">
+        <!-- 原产国筛选 -->
+        <div class="filter-group">
+          <span class="filter-label">🌍 原产国:</span>
+          <select class="filter-select" id="countryFilter" onchange="applyAllFilters()">
+            <option value="">全部国家</option>
+          </select>
+        </div>
+        <!-- 筛选结果计数 -->
+        <span class="filter-count" id="filterCount"></span>
+      </div>
+      <div class="filter-row" style="margin-top:6px;">
+        <span class="exclude-label">🚫 排除公司:</span>
+        <input type="text" class="exclude-input" id="excludeInput" placeholder="输入公司名关键词，逗号分隔多个，回车添加..." />
+        <button class="exclude-add-btn" onclick="addExclude()">添加</button>
+      </div>
+      <div class="exclude-tags" id="excludeTags"></div>
+    </div>
+
+    <div class="table-container" id="tableContainer">
+      <div class="state-empty" id="emptyState">
+        <div class="icon">🔍</div>
+        <p>输入关键词开始搜索海关数据</p>
+        <p class="sub">支持 150+ 国家和地区，完整 287 个数据源</p>
+      </div>
+    </div>
+
+    <div class="pagination-bar" id="paginationBar" style="display:none;">
+      <button class="page-btn" onclick="doSearch(1)" id="firstBtn">首页</button>
+      <button class="page-btn" onclick="doSearch(currentPage-1)" id="prevBtn">‹ 上一页</button>
+      <span class="page-info" id="pageInfo"></span>
+      <button class="page-btn" onclick="doSearch(currentPage+1)" id="nextBtn">下一页 ›</button>
+      <button class="page-btn" onclick="doSearch(totalPages)" id="lastBtn">末页</button>
+      <select class="btn-sm" id="pageSize" onchange="doSearch(1)" style="margin-left:8px;">
+        <option value="10">10条/页</option>
+        <option value="20">20条/页</option>
+        <option value="30" selected>30条/页</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ========== 右侧 AI 助手 ========== -->
+  <div class="sidebar-right" id="aiSidebar">
+    <div class="ai-header">
+      <h3>AI 助手</h3>
+      <button class="ai-toggle" onclick="toggleAI()" title="关闭">×</button>
+    </div>
+    <div class="ai-body" id="aiBody">
+      <div class="ai-message" id="aiContent">
+        <p style="color:var(--text-muted);">搜索后，AI 助手将自动分析结果，为您提供：</p>
+        <h4>📧 客户开发建议</h4>
+        <ul>
+          <li>进口商联系方式推测</li>
+          <li>采购频率与规模分析</li>
+          <li>推荐开发话术</li>
+        </ul>
+        <h4>📊 市场洞察</h4>
+        <ul>
+          <li>主要供应商竞争格局</li>
+          <li>价格趋势分析</li>
+          <li>目标市场推荐</li>
+        </ul>
+      </div>
+    </div>
+    <div class="ai-input-area">
+      <input type="text" class="ai-input" id="aiInput" placeholder="向 AI 提问..." />
+      <button class="ai-send" onclick="aiAsk()">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 公司详情弹窗 ========== -->
+<div class="company-modal-overlay" id="companyModal" style="display:none;" onclick="if(event.target===this)closeCompanyModal()">
+  <div class="company-modal">
+    <div class="modal-header">
+      <h3 id="modalCompanyName"></h3>
+      <button class="modal-close" onclick="closeCompanyModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ========== 配置 ==========
+// localhost走本地代理，线上走Cloudflare Worker代理
+const WORKER_PROXY = 'https://kicky-proxy.dongchunmotor.workers.dev';
+const BASE = location.hostname === 'localhost' ? '' : WORKER_PROXY;
+let currentPage = 1, totalPages = 1, totalRecords = 0;
+let currentRecords = [], filteredRecords = [], lastQuery = {};
+let excludeList = [];
+
+// 列配置
+const ALL_COLUMNS = [
+  { key: 'Dates', label: '日期', show: true, dateAlt: 'Months' },
+  { key: 'Exporter1', label: '出口商', show: true, cls: 'company' },
+  { key: 'Importer1', label: '进口商', show: true, cls: 'company' },
+  { key: 'ProductDesc1', label: '产品描述', show: true, cls: 'desc' },
+  { key: 'HSCODE', label: 'HS编码', show: true },
+  { key: 'QTY', label: '数量', show: true, cls: 'price' },
+  { key: 'UNIT', label: '单位', show: true },
+  { key: 'WT', label: '重量(KG)', show: true, cls: 'price' },
+  { key: 'TotalPrice', label: '总价(USD)', show: true, cls: 'price' },
+  { key: 'UnitPrice', label: '单价(USD)', show: true, cls: 'price' },
+  { key: 'OrgCountry', label: '原产国', show: true },
+  { key: 'DesCountry', label: '目的国', show: true },
+];
+
+// ========== 数据源（完整 287 个） ==========
+const DATA_SOURCES = [
+  { group: '全球', items: [
+    { sid:'994',name:'全球统计进口(年度)',type:'统计数据',transport:'全运输',update:'按周更新',range:'1962-2025' },
+    { sid:'996',name:'全球统计进口(月度)',type:'统计数据',transport:'全运输',update:'按周更新',range:'202001-202602' },
+    { sid:'995',name:'全球统计出口(年度)',type:'统计数据',transport:'全运输',update:'按周更新',range:'1962-2025' },
+    { sid:'997',name:'全球统计出口(月度)',type:'统计数据',transport:'全运输',update:'按周更新',range:'202001-202602' },
+  ]},
+  { group: '美国', items: [
+    { sid:'100',name:'美国',type:'提单数据',transport:'海运',update:'按天更新',range:'201401-202603' },
+    { sid:'101',name:'美国新版',type:'名录数据',transport:'全运输',update:'按月更新',range:'201201-202602' },
+    { sid:'107',name:'美国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+    { sid:'102',name:'美国船东提单',type:'提单数据',transport:'海运',update:'按天更新',range:'202301-202603' },
+    { sid:'103',name:'美国出口',type:'提单数据',transport:'海运',update:'按月更新',range:'201401-202601' },
+    { sid:'105',name:'美国出口新版',type:'提单数据',transport:'海运',update:'一次性',range:'201601-202306' },
+    { sid:'109',name:'美国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '墨西哥', items: [
+    { sid:'501',name:'墨西哥',type:'关单数据',transport:'全运输',update:'每月两次',range:'202401-202603' },
+    { sid:'495',name:'墨西哥新版',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-202409' },
+    { sid:'498',name:'墨西哥海运',type:'关单数据',transport:'海运',update:'按月更新',range:'201201-202601' },
+    { sid:'492',name:'墨西哥空运',type:'关单数据',transport:'空运',update:'一次性',range:'202301-202412' },
+    { sid:'491',name:'墨西哥旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201201-202409' },
+    { sid:'497',name:'墨西哥补充版',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-201711' },
+    { sid:'502',name:'墨西哥发票',type:'关单发票',transport:'全运输',update:'按月更新',range:'202401-202603' },
+    { sid:'503',name:'墨西哥出口',type:'关单数据',transport:'全运输',update:'每月两次',range:'202401-202603' },
+    { sid:'499',name:'墨西哥海运出口',type:'关单数据',transport:'海运',update:'按月更新',range:'201201-202601' },
+    { sid:'494',name:'墨西哥空运出口',type:'关单数据',transport:'空运',update:'一次性',range:'202301-202412' },
+    { sid:'493',name:'墨西哥旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201201-202409' },
+    { sid:'504',name:'墨西哥发票出口',type:'关单发票',transport:'全运输',update:'按月更新',range:'202401-202603' },
+  ]},
+  { group: '加拿大', items: [
+    { sid:'361',name:'加拿大进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
+    { sid:'360',name:'加拿大',type:'名录数据',transport:'全运输',update:'年度更新',range:'2015-2021' },
+    { sid:'363',name:'加拿大出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
+  ]},
+  { group: '澳大利亚', items: [
+    { sid:'151',name:'澳大利亚进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202101-202601' },
+    { sid:'153',name:'澳大利亚出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202101-202601' },
+  ]},
+  { group: '新西兰', items: [
+    { sid:'811',name:'新西兰进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
+    { sid:'813',name:'新西兰出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
+  ]},
+  { group: '巴拿马', items: [
+    { sid:'161',name:'科隆自贸区进口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'250',name:'巴拿马',type:'关单数据',transport:'全运输',update:'按周更新',range:'200901-202602' },
+    { sid:'251',name:'巴拿马旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202505' },
+    { sid:'252',name:'巴拿马海运提单',type:'提单数据',transport:'海运',update:'按月更新',range:'201501-202602' },
+    { sid:'163',name:'科隆自贸区出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'253',name:'巴拿马出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202602' },
+    { sid:'255',name:'巴拿马出口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202505' },
+    { sid:'254',name:'巴拿马海运提单出口',type:'提单数据',transport:'海运',update:'按月更新',range:'201501-202602' },
+  ]},
+  { group: '哥斯达黎加', items: [
+    { sid:'560',name:'哥斯达黎加',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
+    { sid:'561',name:'哥斯达黎加旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201709' },
+    { sid:'565',name:'哥斯达黎加转口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201709' },
+    { sid:'567',name:'哥斯达黎加出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201501-202603' },
+    { sid:'563',name:'哥斯达黎加出口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201709' },
+  ]},
+  { group: '危地马拉', items: [
+    { sid:'711',name:'危地马拉进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'710',name:'危地马拉',type:'关单数据',transport:'全运输',update:'不定期',range:'201801-202602' },
+    { sid:'714',name:'危地马拉出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'713',name:'危地马拉出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-201909' },
+  ]},
+  { group: '萨尔瓦多', items: [
+    { sid:'450',name:'萨尔瓦多',type:'关单数据',transport:'全运输',update:'按天更新',range:'200801-202603' },
+  ]},
+  { group: '斐济', items: [
+    { sid:'891',name:'斐济',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202110' },
+    { sid:'893',name:'斐济出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202110' },
+  ]},
+  { group: '尼加拉瓜', items: [
+    { sid:'786',name:'尼加拉瓜新版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202101-202603' },
+    { sid:'785',name:'尼加拉瓜',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202403' },
+    { sid:'788',name:'尼加拉瓜新版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'202101-202603' },
+    { sid:'787',name:'尼加拉瓜出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202403' },
+  ]},
+  { group: '波多黎各', items: [
+    { sid:'941',name:'波多黎各进口统计',type:'统计数据',transport:'全运输',update:'按季度',range:'200207-202510' },
+    { sid:'943',name:'波多黎各出口统计',type:'统计数据',transport:'全运输',update:'按季度',range:'200207-202510' },
+  ]},
+  { group: '多米尼加', items: [
+    { sid:'201',name:'多米尼加',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+    { sid:'203',name:'多米尼加出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+  ]},
+  { group: '阿根廷', items: [
+    { sid:'540',name:'阿根廷',type:'关单数据',transport:'全运输',update:'按月更新',range:'201001-202601' },
+    { sid:'542',name:'阿根廷快版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202001-202602' },
+    { sid:'543',name:'阿根廷出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '秘鲁', items: [
+    { sid:'550',name:'秘鲁',type:'关单数据',transport:'全运输',update:'按周更新',range:'201101-202603' },
+    { sid:'556',name:'秘鲁快版',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'557',name:'秘鲁空运提单',type:'提单数据',transport:'空运',update:'一次性',range:'201801-201912' },
+    { sid:'559',name:'秘鲁海运提单',type:'提单数据',transport:'海运',update:'一次性',range:'201801-201910' },
+    { sid:'553',name:'秘鲁出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201501-202602' },
+  ]},
+  { group: '玻利维亚', items: [
+    { sid:'485',name:'玻利维亚快版',type:'关单数据',transport:'全运输',update:'半周更新',range:'201401-202603' },
+    { sid:'482',name:'玻利维亚新版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202501-202603' },
+    { sid:'486',name:'玻利维亚进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201001-202512' },
+    { sid:'481',name:'玻利维亚旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201808' },
+    { sid:'483',name:'玻利维亚快版出口',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'484',name:'玻利维亚新版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'202501-202603' },
+    { sid:'487',name:'玻利维亚出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201001-202512' },
+  ]},
+  { group: '智利', items: [
+    { sid:'211',name:'智利新版',type:'关单数据',transport:'全运输',update:'不定期',range:'202401-202603' },
+    { sid:'212',name:'智利空运',type:'关单数据',transport:'空运',update:'不定期',range:'202504-202603' },
+    { sid:'210',name:'智利',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202601' },
+    { sid:'213',name:'智利出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '巴西', items: [
+    { sid:'294',name:'巴西',type:'关单数据',transport:'全运输',update:'一次性',range:'202203-202511' },
+    { sid:'301',name:'巴西空运提单',type:'提单数据',transport:'空运',update:'一次性',range:'202401-202510' },
+    { sid:'291',name:'巴西进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'298',name:'巴西提单',type:'提单数据',transport:'海运',update:'一次性',range:'201901-202512' },
+    { sid:'297',name:'巴西旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-202111' },
+    { sid:'290',name:'巴西2009',type:'关单数据',transport:'全运输',update:'一次性',range:'200901-200912' },
+    { sid:'293',name:'巴西出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'295',name:'巴西旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201601-202110' },
+    { sid:'299',name:'巴西提单出口',type:'提单数据',transport:'海运',update:'一次性',range:'201901-202511' },
+    { sid:'296',name:'巴西出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202201-202510' },
+  ]},
+  { group: '巴拉圭', items: [
+    { sid:'115',name:'巴拉圭新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+    { sid:'111',name:'巴拉圭',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202208' },
+    { sid:'117',name:'巴拉圭出口新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+    { sid:'113',name:'巴拉圭出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202208' },
+  ]},
+  { group: '委内瑞拉', items: [
+    { sid:'414',name:'委内瑞拉提单',type:'提单数据',transport:'海运/空运',update:'按月更新',range:'201901-202508' },
+    { sid:'410',name:'委内瑞拉',type:'关单数据',transport:'全运输',update:'不定期',range:'200901-202408' },
+    { sid:'417',name:'委内瑞拉提单出口',type:'提单数据',transport:'海运/空运',update:'按月更新',range:'201901-202508' },
+    { sid:'413',name:'委内瑞拉出口',type:'关单数据',transport:'全运输',update:'不定期',range:'201401-202408' },
+  ]},
+  { group: '圭亚那', items: [
+    { sid:'935',name:'圭亚那',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202210' },
+    { sid:'937',name:'圭亚那出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201905-202210' },
+  ]},
+  { group: '哥伦比亚', items: [
+    { sid:'238',name:'哥伦比亚新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202601' },
+    { sid:'230',name:'哥伦比亚',type:'关单数据',transport:'全运输',update:'一次性',range:'200801-202404' },
+    { sid:'235',name:'哥伦比亚旧版',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202211' },
+    { sid:'237',name:'哥伦比亚出口旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'200601-202212' },
+    { sid:'233',name:'哥伦比亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-201806' },
+  ]},
+  { group: '厄瓜多尔', items: [
+    { sid:'530',name:'厄瓜多尔',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202603' },
+    { sid:'532',name:'厄瓜多尔进口快版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202603' },
+    { sid:'535',name:'厄瓜多尔空运提单',type:'提单数据',transport:'空运',update:'一次性',range:'202001-202112' },
+    { sid:'538',name:'厄瓜多尔海运提单',type:'提单数据',transport:'海运',update:'一次性',range:'202001-202112' },
+    { sid:'534',name:'厄瓜多尔出口快版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202603' },
+    { sid:'533',name:'厄瓜多尔出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'536',name:'厄瓜多尔空运提单出口',type:'提单数据',transport:'空运',update:'一次性',range:'202001-202112' },
+    { sid:'539',name:'厄瓜多尔海运提单出口',type:'提单数据',transport:'海运',update:'一次性',range:'202001-202112' },
+  ]},
+  { group: '乌拉圭', items: [
+    { sid:'281',name:'乌拉圭',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'285',name:'乌拉圭转口',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'282',name:'乌拉圭进口提单',type:'提单数据',transport:'全运输',update:'一次性',range:'201501-202405' },
+    { sid:'283',name:'乌拉圭出口',type:'关单数据',transport:'全运输',update:'按天更新',range:'201401-202603' },
+    { sid:'284',name:'乌拉圭出口提单',type:'提单数据',transport:'全运输',update:'一次性',range:'201501-202405' },
+  ]},
+  { group: '中国', items: [
+    { sid:'601',name:'中国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'465',name:'中国台湾进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
+    { sid:'460',name:'中国台湾',type:'名录数据',transport:'全运输',update:'一次性',range:'' },
+    { sid:'405',name:'中越双边进口',type:'关单数据',transport:'全运输',update:'一次性',range:'201701-202012' },
+    { sid:'603',name:'中国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'467',name:'中国台湾出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201901-202512' },
+    { sid:'463',name:'中国台湾出口',type:'名录数据',transport:'全运输',update:'一次性',range:'' },
+    { sid:'407',name:'中越双边出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202102' },
+  ]},
+  { group: '印度', items: [
+    { sid:'421',name:'印度',type:'关单数据',transport:'全运输',update:'每十天',range:'201401-202603' },
+    { sid:'431',name:'印度快版',type:'关单数据',transport:'全运输',update:'按周更新',range:'201901-202603' },
+    { sid:'423',name:'印度空运',type:'特殊数据',transport:'空运',update:'按月更新',range:'202201-202512' },
+    { sid:'435',name:'印度经济特区',type:'关单数据',transport:'全运输',update:'不定期',range:'201901-202602' },
+    { sid:'510',name:'印度出口',type:'关单数据',transport:'全运输',update:'每十天',range:'201401-202603' },
+    { sid:'433',name:'印度快版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201901-202603' },
+    { sid:'425',name:'印度空运出口',type:'特殊数据',transport:'空运',update:'按月更新',range:'201601-202509' },
+    { sid:'437',name:'印度经济特区出口',type:'关单数据',transport:'全运输',update:'不定期',range:'202101-202602' },
+  ]},
+  { group: '越南', items: [
+    { sid:'401',name:'越南',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
+    { sid:'403',name:'越南出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
+  ]},
+  { group: '巴基斯坦', items: [
+    { sid:'520',name:'巴基斯坦关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'201401-202603' },
+    { sid:'130',name:'巴基斯坦海运提单',type:'提单数据',transport:'海运',update:'按月更新',range:'200801-202512' },
+    { sid:'311',name:'巴基斯坦空运提单',type:'提单数据',transport:'空运',update:'不定期',range:'202212-202305' },
+    { sid:'310',name:'巴基斯坦提单',type:'提单数据',transport:'海运/空运',update:'一次性',range:'200801-202108' },
+    { sid:'523',name:'巴基斯坦关单出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'527',name:'巴基斯坦出口新版',type:'提单数据',transport:'海运/空运',update:'一次性',range:'202202-202407' },
+  ]},
+  { group: '印尼', items: [
+    { sid:'722',name:'印度尼西亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'725',name:'印度尼西亚新版',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202407' },
+    { sid:'720',name:'印度尼西亚旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201807-202109' },
+    { sid:'724',name:'印度尼西亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+    { sid:'727',name:'印度尼西亚新版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202407' },
+    { sid:'723',name:'印度尼西亚旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201807-202109' },
+  ]},
+  { group: '泰国', items: [
+    { sid:'862',name:'泰国进口关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'202101-202505' },
+    { sid:'865',name:'泰国进口海运提单',type:'提单数据',transport:'海运',update:'每月两次',range:'201911-202505' },
+    { sid:'861',name:'泰国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202001-202412' },
+    { sid:'864',name:'泰国出口关单',type:'关单数据',transport:'全运输',update:'每月两次',range:'202105-202505' },
+    { sid:'867',name:'泰国出口海运提单',type:'提单数据',transport:'海运',update:'每月两次',range:'201911-202505' },
+    { sid:'868',name:'泰国出口新版',type:'特殊数据',transport:'全运输',update:'按天更新',range:'202301-202603' },
+    { sid:'863',name:'泰国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202012-202412' },
+  ]},
+  { group: '土耳其', items: [
+    { sid:'932',name:'土耳其新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202511' },
+    { sid:'936',name:'土耳其保税区',type:'关单数据',transport:'全运输',update:'按月更新',range:'202408-202409' },
+    { sid:'931',name:'土耳其',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202511' },
+    { sid:'934',name:'土耳其新版出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'200101-202511' },
+    { sid:'933',name:'土耳其出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202001-202511' },
+    { sid:'672',name:'土耳其过境',type:'过境数据',transport:'陆运',update:'按月更新',range:'202301-202602' },
+  ]},
+  { group: '马来西亚', items: [
+    { sid:'331',name:'马来西亚',type:'关单数据',transport:'全运输',update:'每月两次',range:'202301-202602' },
+    { sid:'333',name:'马来西亚出口',type:'关单数据',transport:'全运输',update:'每月两次',range:'202301-202602' },
+  ]},
+  { group: '菲律宾', items: [
+    { sid:'571',name:'菲律宾新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202603' },
+    { sid:'570',name:'菲律宾',type:'关单数据',transport:'全运输',update:'不定期',range:'201501-202601' },
+    { sid:'573',name:'菲律宾出口新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202603' },
+    { sid:'572',name:'菲律宾出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202601' },
+  ]},
+  { group: '韩国', items: [
+    { sid:'170',name:'韩国',type:'名录数据',transport:'全运输',update:'按周更新',range:'200901-202603' },
+    { sid:'871',name:'韩国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'200401-202408' },
+    { sid:'873',name:'韩国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'200401-202408' },
+  ]},
+  { group: '孟加拉国', items: [
+    { sid:'831',name:'孟加拉',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'833',name:'孟加拉出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '乌兹别克斯坦', items: [
+    { sid:'631',name:'乌兹别克斯坦新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'630',name:'乌兹别克斯坦',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202312' },
+    { sid:'632',name:'乌兹别克斯坦出口新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'633',name:'乌兹别克斯坦出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202210' },
+  ]},
+  { group: '哈萨克斯坦', items: [
+    { sid:'640',name:'哈萨克斯坦',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
+    { sid:'643',name:'哈萨克斯坦出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'201401-202603' },
+  ]},
+  { group: '斯里兰卡', items: [
+    { sid:'660',name:'斯里兰卡',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'661',name:'斯里兰卡2',type:'关单数据',transport:'全运输',update:'按月更新',range:'202503-202506' },
+    { sid:'663',name:'斯里兰卡出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+    { sid:'662',name:'斯里兰卡2出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202503-202506' },
+  ]},
+  { group: '日本', items: [
+    { sid:'761',name:'日本进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'764',name:'日本空运进口统计',type:'统计数据',transport:'空运',update:'按月更新',range:'201401-202602' },
+    { sid:'766',name:'日本海运进口统计',type:'统计数据',transport:'海运',update:'按月更新',range:'201401-202602' },
+    { sid:'763',name:'日本出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'765',name:'日本空运出口统计',type:'统计数据',transport:'空运',update:'按月更新',range:'201401-202602' },
+    { sid:'767',name:'日本海运出口统计',type:'统计数据',transport:'海运',update:'按月更新',range:'201401-202602' },
+  ]},
+  { group: '阿富汗', items: [
+    { sid:'300',name:'阿富汗',type:'提单数据',transport:'海运',update:'按月更新',range:'200801-202512' },
+  ]},
+  { group: '欧亚经济联盟', items: [
+    { sid:'342',name:'欧亚经济联盟新版',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'341',name:'欧亚经济联盟',type:'关单数据',transport:'全运输',update:'一次性',range:'202201-202307' },
+    { sid:'344',name:'欧亚经济联盟新版出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202401-202602' },
+    { sid:'343',name:'欧亚经济联盟出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202201-202307' },
+  ]},
+  { group: '亚美尼亚', items: [
+    { sid:'951',name:'亚美尼亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201705-202602' },
+    { sid:'953',name:'亚美尼亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201705-202602' },
+  ]},
+  { group: '蒙古国', items: [
+    { sid:'371',name:'蒙古国',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202602' },
+    { sid:'373',name:'蒙古国出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202602' },
+  ]},
+  { group: '伊朗', items: [
+    { sid:'381',name:'伊朗',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202601' },
+    { sid:'383',name:'伊朗出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202601' },
+  ]},
+  { group: '巴勒斯坦', items: [
+    { sid:'391',name:'巴勒斯坦',type:'关单数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
+  ]},
+  { group: '新加坡', items: [
+    { sid:'471',name:'新加坡',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-201912' },
+    { sid:'473',name:'新加坡出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-201912' },
+  ]},
+  { group: '马尔代夫', items: [
+    { sid:'131',name:'马尔代夫',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+    { sid:'133',name:'马尔代夫出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202101-202602' },
+  ]},
+  { group: '俄罗斯', items: [
+    { sid:'126',name:'俄罗斯',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202504' },
+    { sid:'125',name:'俄罗斯铁路',type:'铁路数据',transport:'铁路',update:'按周更新',range:'201901-202603' },
+    { sid:'128',name:'俄罗斯新版',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202312' },
+    { sid:'121',name:'俄罗斯旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202312' },
+    { sid:'127',name:'俄罗斯出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202101-202503' },
+    { sid:'129',name:'俄罗斯出口新版',type:'关单数据',transport:'全运输',update:'一次性',range:'202301-202312' },
+    { sid:'123',name:'俄罗斯旧版出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201401-202312' },
+  ]},
+  { group: '乌克兰', items: [
+    { sid:'140',name:'乌克兰',type:'关单数据',transport:'全运输',update:'按月更新',range:'200801-202602' },
+    { sid:'143',name:'乌克兰出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201501-202602' },
+  ]},
+  { group: '西班牙', items: [
+    { sid:'351',name:'西班牙',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+    { sid:'353',name:'西班牙出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '欧盟', items: [
+    { sid:'650',name:'欧盟进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+    { sid:'653',name:'欧盟出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '英国', items: [
+    { sid:'180',name:'英国',type:'名录数据',transport:'全运输',update:'按月更新',range:'200801-202601' },
+    { sid:'181',name:'英国进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202201-202601' },
+    { sid:'183',name:'英国出口',type:'名录数据',transport:'全运输',update:'按月更新',range:'201601-202601' },
+    { sid:'182',name:'英国出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'202201-202601' },
+  ]},
+  { group: '摩尔多瓦', items: [
+    { sid:'321',name:'摩尔多瓦',type:'关单数据',transport:'全运输',update:'不定期',range:'201801-202303' },
+    { sid:'320',name:'摩尔多瓦2010',type:'关单数据',transport:'全运输',update:'一次性',range:'200901-201012' },
+    { sid:'323',name:'摩尔多瓦出口',type:'关单数据',transport:'全运输',update:'不定期',range:'201801-202303' },
+  ]},
+  { group: '科索沃', items: [
+    { sid:'441',name:'科索沃',type:'关单数据',transport:'全运输',update:'一次性',range:'201512-202209' },
+    { sid:'443',name:'科索沃出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201807-202209' },
+  ]},
+  { group: '马拉维', items: [
+    { sid:'591',name:'马拉维',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'593',name:'马拉维出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '赞比亚', items: [
+    { sid:'911',name:'赞比亚',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202312' },
+    { sid:'913',name:'赞比亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202312' },
+  ]},
+  { group: '莱索托', items: [
+    { sid:'821',name:'莱索托',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'823',name:'莱索托出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '肯尼亚', items: [
+    { sid:'742',name:'肯尼亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'744',name:'肯尼亚过境',type:'过境数据',transport:'陆运',update:'按月更新',range:'202201-202602' },
+    { sid:'741',name:'肯尼亚旧版',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202205' },
+    { sid:'743',name:'肯尼亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+  ]},
+  { group: '纳米比亚', items: [
+    { sid:'901',name:'纳米比亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'903',name:'纳米比亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '科特迪瓦', items: [
+    { sid:'921',name:'科特迪瓦',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'923',name:'科特迪瓦出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+  ]},
+  { group: '津巴布韦', items: [
+    { sid:'881',name:'津巴布韦',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202307' },
+    { sid:'883',name:'津巴布韦出口',type:'关单数据',transport:'全运输',update:'一次性',range:'202001-202307' },
+  ]},
+  { group: '布隆迪', items: [
+    { sid:'775',name:'布隆迪',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'777',name:'布隆迪出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202211' },
+  ]},
+  { group: '尼日尔', items: [
+    { sid:'261',name:'尼日尔',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202211' },
+    { sid:'263',name:'尼日尔出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202211' },
+  ]},
+  { group: '尼日利亚', items: [
+    { sid:'801',name:'尼日利亚',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202509' },
+    { sid:'803',name:'尼日利亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201901-202509' },
+  ]},
+  { group: '安哥拉', items: [
+    { sid:'225',name:'安哥拉海运进口',type:'提单数据',transport:'海运',update:'按月更新',range:'202101-202602' },
+    { sid:'221',name:'安哥拉进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202504' },
+    { sid:'227',name:'安哥拉海运出口',type:'提单数据',transport:'海运',update:'按月更新',range:'202101-202602' },
+    { sid:'223',name:'安哥拉出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201501-202504' },
+  ]},
+  { group: '塞内加尔', items: [
+    { sid:'271',name:'塞内加尔',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202312' },
+    { sid:'273',name:'塞内加尔出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202312' },
+  ]},
+  { group: '埃塞俄比亚', items: [
+    { sid:'690',name:'埃塞俄比亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201401-202602' },
+    { sid:'693',name:'埃塞俄比亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201701-202602' },
+  ]},
+  { group: '坦桑尼亚', items: [
+    { sid:'752',name:'坦桑尼亚新版',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202602' },
+    { sid:'755',name:'坦桑尼亚新版过境',type:'过境数据',transport:'全运输',update:'按周更新',range:'202201-202602' },
+    { sid:'751',name:'坦桑尼亚',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202305' },
+    { sid:'754',name:'坦桑尼亚新版出口',type:'关单数据',transport:'全运输',update:'按周更新',range:'202201-202602' },
+    { sid:'753',name:'坦桑尼亚出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202305' },
+  ]},
+  { group: '圣多美和普林西比', items: [
+    { sid:'581',name:'圣多美和普林西比',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'583',name:'圣多美和普林西比出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+  ]},
+  { group: '喀麦隆', items: [
+    { sid:'191',name:'喀麦隆',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+    { sid:'193',name:'喀麦隆出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '卢旺达', items: [
+    { sid:'961',name:'卢旺达',type:'关单数据',transport:'全运输',update:'按月更新',range:'202201-202602' },
+  ]},
+  { group: '博茨瓦纳', items: [
+    { sid:'791',name:'博茨瓦纳',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202511' },
+    { sid:'793',name:'博茨瓦纳出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202511' },
+  ]},
+  { group: '南非', items: [
+    { sid:'851',name:'南非进口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+    { sid:'853',name:'南非出口统计',type:'统计数据',transport:'全运输',update:'按月更新',range:'201401-202601' },
+  ]},
+  { group: '加纳', items: [
+    { sid:'781',name:'加纳',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+    { sid:'783',name:'加纳出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202602' },
+  ]},
+  { group: '利比里亚', items: [
+    { sid:'771',name:'利比里亚',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202601' },
+    { sid:'773',name:'利比里亚出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202601' },
+  ]},
+  { group: '乍得', items: [
+    { sid:'241',name:'乍得',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202206' },
+    { sid:'243',name:'乍得出口',type:'关单数据',transport:'全运输',update:'一次性',range:'201801-202206' },
+  ]},
+  { group: '乌干达', items: [
+    { sid:'731',name:'乌干达',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202601' },
+    { sid:'735',name:'乌干达转口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201801-202601' },
+    { sid:'733',name:'乌干达出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202601' },
+  ]},
+  { group: '刚果(金)', items: [
+    { sid:'971',name:'刚果(金)',type:'关单数据',transport:'全运输',update:'按月更新',range:'201601-202602' },
+    { sid:'973',name:'刚果(金)出口',type:'关单数据',transport:'全运输',update:'按月更新',range:'202501-202602' },
+  ]},
+  { group: '非洲自贸区', items: [
+    { sid:'981',name:'非洲自贸区',type:'关单数据',transport:'陆运',update:'按月更新',range:'201901-202602' },
+  ]},
+  { group: '中美洲', items: [
+    { sid:'621',name:'中美洲新版',type:'过境数据',transport:'陆运',update:'不定期',range:'202201-202603' },
+    { sid:'620',name:'中美洲',type:'过境数据',transport:'陆运',update:'一次性',range:'201601-202101' },
+  ]},
+  { group: '环球海运', items: [
+    { sid:'700',name:'环球海运',type:'海运提单',transport:'海运',update:'不定期',range:'201601-202603' },
+    { sid:'670',name:'欧亚航线',type:'提单数据',transport:'海运',update:'一次性',range:'201501-202012' },
+    { sid:'704',name:'危险品提单',type:'提单数据',transport:'海运',update:'不定期',range:'202202-202603' },
+  ]},
+  { group: '独联体', items: [
+    { sid:'680',name:'独联体',type:'过境数据',transport:'陆运',update:'不定期',range:'201601-202411' },
+  ]},
+];
+
+let selectedSid = '100';
+let allDsItems = [];
+
+// ========== Token ==========
+function getToken() { return localStorage.getItem('kicky_token') || ''; }
+function saveToken() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  localStorage.setItem('kicky_token', t);
+  document.getElementById('tokenInput').style.borderColor = 'var(--green)';
+  setTimeout(() => document.getElementById('tokenInput').style.borderColor = '', 1500);
+}
+function loadToken() {
+  const t = getToken();
+  if (t) document.getElementById('tokenInput').value = t;
+}
+
+// ========== 搜索历史 ==========
+function getHistory() { try { return JSON.parse(localStorage.getItem('kicky_history') || '[]'); } catch { return []; } }
+function addHistory(kw, field, sid) {
+  let h = getHistory().filter(x => !(x.kw === kw && x.sid === sid));
+  const ds = allDsItems.find(d => d.sid === sid);
+  h.unshift({ kw, field, sid, dsName: ds ? ds.name : sid, time: new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) });
+  if (h.length > 10) h = h.slice(0, 10);
+  localStorage.setItem('kicky_history', JSON.stringify(h));
+  renderHistory();
+}
+function clearHistory() { localStorage.removeItem('kicky_history'); renderHistory(); }
+function renderHistory() {
+  const h = getHistory();
+  const sec = document.getElementById('historySection');
+  const list = document.getElementById('historyList');
+  if (h.length === 0) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  list.innerHTML = h.map((item, i) => `
+    <div class="history-item" onclick="loadHistory(${i})">
+      <span class="h-text"><b>${item.kw}</b> · ${item.dsName||''}</span>
+      <span class="h-meta">${item.time}</span>
+      <span class="h-close" onclick="event.stopPropagation();removeHistory(${i})">×</span>
+    </div>`).join('');
+}
+function loadHistory(i) {
+  const h = getHistory()[i]; if (!h) return;
+  document.getElementById('keyword').value = h.kw;
+  document.getElementById('field').value = h.field || 'ProductDesc1';
+  selectDS(h.sid);
+  doSearch(1);
+}
+function removeHistory(i) {
+  let h = getHistory(); h.splice(i, 1);
+  localStorage.setItem('kicky_history', JSON.stringify(h));
+  renderHistory();
+}
+
+// ========== 数据源树 ==========
+function initDSTree() {
+  DATA_SOURCES.forEach(g => g.items.forEach(item => { item.group = g.group; allDsItems.push(item); }));
+  renderDSTree();
+  selectDS('100');
+}
+function renderDSTree(filter) {
+  const tree = document.getElementById('dsTree');
+  const f = (filter || '').toLowerCase();
+  let html = '';
+  DATA_SOURCES.forEach(g => {
+    const items = f ? g.items.filter(d => d.name.toLowerCase().includes(f) || d.sid.includes(f) || g.group.includes(f)) : g.items;
+    if (items.length === 0) return;
+    const open = f || g.group === '美国' ? '' : ' collapsed';
+    const arrowCls = f || g.group === '美国' ? ' open' : '';
+    html += `<div class="ds-group-header" onclick="this.querySelector('.arrow').classList.toggle('open');this.nextElementSibling.classList.toggle('collapsed')">
+      <span class="arrow${arrowCls}">▶</span> ${g.group}
+    </div><div class="ds-group-items${open}">`;
+    items.forEach(d => {
+      html += `<div class="ds-item${d.sid===selectedSid?' active':''}" data-sid="${d.sid}" onclick="selectDS('${d.sid}')">[${d.sid}] ${d.name}</div>`;
+    });
+    html += '</div>';
+  });
+  tree.innerHTML = html;
+}
+function filterDS() { renderDSTree(document.getElementById('dsSearch').value); }
+function selectDS(sid) {
+  selectedSid = sid;
+  document.querySelectorAll('.ds-item').forEach(el => el.classList.toggle('active', el.dataset.sid === sid));
+  const item = allDsItems.find(d => d.sid === sid);
+  if (item) {
+    document.getElementById('dsDetailName').textContent = `${item.name} [${item.sid}]`;
+    document.getElementById('dsDetail').querySelector('div:nth-child(2)').textContent = `类型: ${item.type}  运输: ${item.transport}  更新: ${item.update}`;
+    document.getElementById('dsDetail').querySelector('div:nth-child(3)').textContent = `范围: ${item.range}`;
+  }
+}
+
+// ========== 列设置 ==========
+function initColSettings() {
+  const el = document.getElementById('colSettings');
+  el.innerHTML = ALL_COLUMNS.map((c, i) =>
+    `<label><input type="checkbox" ${c.show?'checked':''} onchange="ALL_COLUMNS[${i}].show=this.checked;if(currentRecords.length)renderTable()"> ${c.label}</label>`
+  ).join('');
+}
+function toggleColSettings() {
+  const el = document.getElementById('colSettings');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+// ========== 队列状态 ==========
+async function fetchQueueStatus() {
+  try {
+    const r = await fetch(`${BASE}/api/queue/status`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('qPending').textContent = d.pending || 0;
+    document.getElementById('qProcessing').textContent = d.processing || 0;
+    document.getElementById('qDone').textContent = d.done || 0;
+    document.getElementById('qCache').textContent = d.cache_entries || 0;
+  } catch {}
+}
+
+// ========== API ==========
+function getHeaders() { return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' }; }
+
+async function submitQuery(params) {
+  const r = await fetch(`${BASE}/api/query`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(params) });
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`HTTP ${r.status}: ${txt}`);
+  }
+  return r.json();
+}
+
+async function pollTask(taskId) {
+  const startTime = Date.now();
+  for (let i = 0; i < 300; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    let r;
+    try {
+      r = await fetch(`${BASE}/api/task/${taskId}`, { headers: getHeaders() });
+    } catch (e) {
+      showBanner('loading', `⏳ 网络波动，重试中...（已等待 ${elapsed}秒）`);
+      continue;
+    }
+    if (!r.ok) { showBanner('loading', `⏳ 服务繁忙，继续等待...（已等待 ${elapsed}秒）`); continue; }
+    const d = await r.json();
+    if (d.status === 'done') return d;
+    if (d.status === 'failed') throw new Error(d.error || '查询失败');
+    if (d.captcha_blocking) {
+      showBanner('error', `⚠️ 验证码阻塞中（已等待 ${elapsed}秒），请 <a href="${d.captcha_url||'https://cd.210k.cc/captcha/live'}" target="_blank" style="color:#c62828;text-decoration:underline;">点此解题</a> 后自动继续`);
+    } else if (d.status === 'pending') {
+      showBanner('loading', `⏳ 排队中，前面还有 ${(d.position||1)-1} 人...（已等待 ${elapsed}秒）`);
+    } else if (d.status === 'processing') {
+      showBanner('loading', `⚡ 正在查询...（已等待 ${elapsed}秒）`);
+    }
+  }
+  throw new Error('查询超时（等待超过10分钟）');
+}
+
+// ========== 搜索 ==========
+async function doSearch(page) {
+  if (!getToken()) { alert('请先输入并保存 API Token'); return; }
+  const kw = document.getElementById('keyword').value.trim();
+  if (!kw) { alert('请输入搜索关键词'); return; }
+
+  currentPage = page;
+  const params = {
+    keyword: kw, field: document.getElementById('field').value,
+    sid: selectedSid, page_num: page,
+    page_size: parseInt(document.getElementById('pageSize').value),
+  };
+  const ds = document.getElementById('dateStart').value.trim();
+  const de = document.getElementById('dateEnd').value.trim();
+  if (ds) params.date_start = ds;
+  if (de) params.date_end = de;
+  lastQuery = { ...params };
+
+  document.getElementById('searchBtn').disabled = true;
+  showBanner('loading', '⏳ 正在提交查询...');
+  document.getElementById('resultHeader').style.display = 'none';
+  document.getElementById('paginationBar').style.display = 'none';
+  document.getElementById('tableContainer').innerHTML = '<div class="state-empty"><div class="spinner"></div><p style="margin-top:12px;">查询中...</p></div>';
+
+  try {
+    const data = await submitQuery(params);
+    let result, cached = false;
+    if (data.cached) {
+      result = data.result;
+      cached = true;
+    } else if (data.task_id) {
+      showBanner('loading', `⏳ 已加入队列（位置: ${data.position}），等待处理...`);
+      const taskResult = await pollTask(data.task_id);
+      result = taskResult.result;
+      cached = taskResult.cached || false;
+    } else {
+      // API直接返回了结果
+      result = data.result || data;
+      cached = false;
+    }
+    if (!result || result.total === undefined) {
+      throw new Error('API 返回数据格式异常，请检查 Token 和参数');
+    }
+    addHistory(kw, params.field, selectedSid);
+    displayResult(result, cached);
+    fetchQueueStatus();
+    analyzeResult(result, kw);
+  } catch (e) {
+    showBanner('error', `❌ ${e.message}`);
+    document.getElementById('tableContainer').innerHTML = `<div class="state-empty"><div class="icon" style="color:var(--red)">⚠</div><p style="color:var(--red)">${e.message}</p></div>`;
+  } finally {
+    document.getElementById('searchBtn').disabled = false;
+  }
+}
+
+// ========== 显示 ==========
+function showBanner(type, msg) {
+  document.getElementById('bannerArea').innerHTML = `<div class="result-banner ${type}"><span class="banner-icon">${type==='loading'?'⚡':type==='cache'?'⚡':'⚠'}</span>${msg}</div>`;
+}
+
+function displayResult(result, cached) {
+  totalRecords = result.total;
+  currentRecords = result.records || [];
+  const ps = parseInt(document.getElementById('pageSize').value);
+  totalPages = Math.ceil(totalRecords / ps);
+
+  if (cached) {
+    showBanner('cache', `本地缓存命中 &nbsp; 共 ${totalRecords.toLocaleString()} 条记录`);
+  } else {
+    showBanner('cache', `查询完成 &nbsp; 共 ${totalRecords.toLocaleString()} 条记录 &nbsp; 耗时 ${result.took_ms||0}ms`);
+  }
+
+  document.getElementById('resultHeader').style.display = 'flex';
+  document.getElementById('totalBadge').textContent = `共${totalRecords.toLocaleString()}条`;
+  document.getElementById('timeBadge').textContent = `${result.took_ms||0}ms`;
+  document.getElementById('pageBadge').textContent = `第 ${currentPage} 页 / 每页 ${ps} 条`;
+
+  // 显示筛选栏
+  document.getElementById('filterBar').style.display = '';
+  renderExcludeTags();
+  populateCountryFilters();
+
+  if (currentRecords.length === 0) {
+    document.getElementById('tableContainer').innerHTML = '<div class="state-empty"><div class="icon">📭</div><p>未找到匹配的记录</p></div>';
+    document.getElementById('paginationBar').style.display = 'none';
+    return;
+  }
+
+  // 应用所有过滤
+  applyAllFilters();
+
+  document.getElementById('paginationBar').style.display = 'flex';
+  document.getElementById('pageInfo').textContent = `${currentPage} / ${totalPages}`;
+  document.getElementById('firstBtn').disabled = currentPage <= 1;
+  document.getElementById('prevBtn').disabled = currentPage <= 1;
+  document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+  document.getElementById('lastBtn').disabled = currentPage >= totalPages;
+}
+
+function renderTable() {
+  const cols = ALL_COLUMNS.filter(c => c.show);
+  const startIdx = (currentPage - 1) * parseInt(document.getElementById('pageSize').value);
+  const rows = filteredRecords.length ? filteredRecords : currentRecords;
+
+  let html = '<table><thead><tr><th>#</th>';
+  cols.forEach(c => html += `<th>${c.label}</th>`);
+  html += '</tr></thead><tbody>';
+
+  if (rows.length === 0) {
+    html += `<tr><td colspan="${cols.length+1}" style="text-align:center;padding:40px;color:var(--text-muted);">所有记录已被过滤，尝试移除部分排除条件</td></tr>`;
+  }
+
+  rows.forEach((r, i) => {
+    html += `<tr><td style="color:var(--text-muted)">${startIdx + i + 1}</td>`;
+    cols.forEach(c => {
+      let val = r[c.key];
+      if (c.dateAlt && !val) val = r[c.dateAlt];
+      val = val || '—';
+      const cls = c.cls ? ` class="${c.cls}"` : '';
+
+      if (c.cls === 'price') {
+        val = formatNum(val);
+      }
+      if (c.cls === 'company') {
+        const safeVal = String(val).replace(/"/g, '&quot;').replace(/'/g, "\\'");
+        const searchField = c.key === 'Exporter1' ? 'Exporter1' : 'Importer1';
+        html += `<td${cls}>`
+          + `<button class="expand-btn" onclick="event.stopPropagation();searchApollo('${safeVal}')" title="Apollo.io 搜索邮箱">+</button>`
+          + `<button class="exclude-btn" onclick="event.stopPropagation();quickExclude('${safeVal}')" title="排除此公司">×</button>`
+          + `<a class="company-link" href="#" onclick="event.preventDefault();openCompanyModal('${safeVal}','${searchField}')" title="查看公司详情 / 搜索邮箱 / 背调">${val}</a>`
+          + `</td>`;
+      } else if (c.cls === 'desc') {
+        html += `<td${cls} title="${String(val).replace(/"/g,'&quot;')}">${val}</td>`;
+      } else {
+        html += `<td${cls}>${val}</td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+// ========== 视图切换 ==========
+let currentView = 'table';
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('viewTable').classList.toggle('active', view === 'table');
+  document.getElementById('viewCompany').classList.toggle('active', view === 'company');
+  if (view === 'table') {
+    renderTable();
+  } else {
+    renderCompanyView();
+  }
+}
+
+// 国旗 emoji 映射
+const COUNTRY_FLAGS = {
+  'CHINA':'🇨🇳','CN':'🇨🇳','US':'🇺🇸','USA':'🇺🇸','UNITED STATES':'🇺🇸','MEXICO':'🇲🇽','MX':'🇲🇽',
+  'INDIA':'🇮🇳','IN':'🇮🇳','GERMANY':'🇩🇪','DE':'🇩🇪','JAPAN':'🇯🇵','JP':'🇯🇵','KOREA':'🇰🇷','KR':'🇰🇷',
+  'UK':'🇬🇧','UNITED KINGDOM':'🇬🇧','GB':'🇬🇧','BRAZIL':'🇧🇷','BR':'🇧🇷','RUSSIA':'🇷🇺','RU':'🇷🇺',
+  'FRANCE':'🇫🇷','FR':'🇫🇷','ITALY':'🇮🇹','IT':'🇮🇹','CANADA':'🇨🇦','CA':'🇨🇦','AUSTRALIA':'🇦🇺','AU':'🇦🇺',
+  'SPAIN':'🇪🇸','ES':'🇪🇸','TURKEY':'🇹🇷','TR':'🇹🇷','VIETNAM':'🇻🇳','VN':'🇻🇳','THAILAND':'🇹🇭','TH':'🇹🇭',
+  'INDONESIA':'🇮🇩','ID':'🇮🇩','MALAYSIA':'🇲🇾','MY':'🇲🇾','PHILIPPINES':'🇵🇭','PH':'🇵🇭',
+  'TAIWAN':'🇹🇼','TW':'🇹🇼','PAKISTAN':'🇵🇰','PK':'🇵🇰','BANGLADESH':'🇧🇩','BD':'🇧🇩',
+  'COLOMBIA':'🇨🇴','CO':'🇨🇴','PERU':'🇵🇪','PE':'🇵🇪','CHILE':'🇨🇱','CL':'🇨🇱','ARGENTINA':'🇦🇷','AR':'🇦🇷',
+  'ECUADOR':'🇪🇨','EC':'🇪🇨','PANAMA':'🇵🇦','PA':'🇵🇦','UKRAINE':'🇺🇦','UA':'🇺🇦',
+  'SOUTH AFRICA':'🇿🇦','ZA':'🇿🇦','KENYA':'🇰🇪','KE':'🇰🇪','NIGERIA':'🇳🇬','NG':'🇳🇬',
+  'EGYPT':'🇪🇬','EG':'🇪🇬','UAE':'🇦🇪','NETHERLANDS':'🇳🇱','NL':'🇳🇱','BELGIUM':'🇧🇪','BE':'🇧🇪',
+  'POLAND':'🇵🇱','PL':'🇵🇱','SWEDEN':'🇸🇪','SE':'🇸🇪','SINGAPORE':'🇸🇬','SG':'🇸🇬',
+  'HONG KONG':'🇭🇰','HK':'🇭🇰','SWITZERLAND':'🇨🇭','CH':'🇨🇭','AUSTRIA':'🇦🇹','AT':'🇦🇹',
+  'IRAN':'🇮🇷','IR':'🇮🇷','COSTA RICA':'🇨🇷','EL SALVADOR':'🇸🇻','GUATEMALA':'🇬🇹',
+  'DOMINICAN REPUBLIC':'🇩🇴','BOLIVIA':'🇧🇴','PARAGUAY':'🇵🇾','URUGUAY':'🇺🇾','VENEZUELA':'🇻🇪',
+  'SRI LANKA':'🇱🇰','KAZAKHSTAN':'🇰🇿','UZBEKISTAN':'🇺🇿','ARMENIA':'🇦🇲','MONGOLIA':'🇲🇳',
+  'NEW ZEALAND':'🇳🇿','NZ':'🇳🇿','ISRAEL':'🇮🇱','IL':'🇮🇱','PORTUGAL':'🇵🇹','PT':'🇵🇹',
+};
+function getFlag(country) {
+  if (!country) return '🏳️';
+  return COUNTRY_FLAGS[country.toUpperCase()] || '🏳️';
+}
+
+function renderCompanyView() {
+  const rows = filteredRecords.length ? filteredRecords : currentRecords;
+  if (!rows.length) { document.getElementById('tableContainer').innerHTML = '<div class="state-empty"><div class="icon">📭</div><p>无数据</p></div>'; return; }
+
+  // 聚合按公司
+  const importerMap = {}, exporterMap = {};
+  rows.forEach(r => {
+    const imp = r.Importer1 || '';
+    const exp = r.Exporter1 || '';
+    const price = parseFloat(r.TotalPrice) || 0;
+    const qty = parseFloat(r.QTY) || 0;
+    if (imp) {
+      if (!importerMap[imp]) importerMap[imp] = { name: imp, count: 0, totalPrice: 0, totalQty: 0, countries: new Set(), products: new Set() };
+      importerMap[imp].count++;
+      importerMap[imp].totalPrice += price;
+      importerMap[imp].totalQty += qty;
+      if (r.DesCountry) importerMap[imp].countries.add(r.DesCountry);
+      if (r.OrgCountry) importerMap[imp].countries.add(r.OrgCountry);
+      if (r.ProductDesc1) importerMap[imp].products.add(r.ProductDesc1);
+    }
+    if (exp) {
+      if (!exporterMap[exp]) exporterMap[exp] = { name: exp, count: 0, totalPrice: 0, totalQty: 0, countries: new Set(), products: new Set() };
+      exporterMap[exp].count++;
+      exporterMap[exp].totalPrice += price;
+      exporterMap[exp].totalQty += qty;
+      if (r.OrgCountry) exporterMap[exp].countries.add(r.OrgCountry);
+      if (r.ProductDesc1) exporterMap[exp].products.add(r.ProductDesc1);
+    }
+  });
+
+  const importers = Object.values(importerMap).sort((a, b) => b.count - a.count);
+  const exporters = Object.values(exporterMap).sort((a, b) => b.count - a.count);
+
+  // 检查是否是按公司搜索（搜索字段=Importer1/Exporter1）
+  const field = document.getElementById('field').value;
+  const keyword = document.getElementById('keyword').value.trim();
+  const isCompanySearch = (field === 'Importer1' || field === 'Exporter1');
+
+  let html = '<div class="company-view">';
+
+  // 如果是搜索特定公司，显示中心卡片
+  if (isCompanySearch && keyword) {
+    html += `<div class="cv-center-card">
+      <div class="cv-center-name">${keyword}</div>
+      <div class="cv-center-meta">${field === 'Importer1' ? '进口商' : '出口商'} · 共 ${rows.length} 条记录 · 总金额 $${rows.reduce((s,r)=>s+(parseFloat(r.TotalPrice)||0),0).toLocaleString('en-US',{maximumFractionDigits:0})}</div>
+    </div>`;
+  }
+
+  // 进口商列表
+  if (importers.length > 0) {
+    html += `<div class="cv-section">
+      <div class="cv-section-title">🏢 进口商 <span class="cv-count">(${importers.length} 家公司)</span></div>
+      <div class="cv-company-list">`;
+    importers.forEach((c, idx) => {
+      const country = [...c.countries][0] || '';
+      const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+      html += `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','Importer1')">
+        <span class="cv-flag">${getFlag(country)}</span>
+        <span class="cv-country-tag">${country || '未知'}</span>
+        <div class="cv-company-info">
+          <div class="cv-company-name" title="${c.name}">${c.name}</div>
+          <div class="cv-company-stats">${c.totalPrice > 0 ? '$'+c.totalPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : ''} ${c.totalQty > 0 ? ' · 数量 '+c.totalQty.toLocaleString() : ''}</div>
+        </div>
+        <span class="cv-badge">${c.count}+</span>
+        <button class="cv-contact-btn" onclick="event.stopPropagation();toggleInlineContact(this,'${safeN}')">📞 联系方式</button>
+      </div>
+      <div class="cv-contact-inline" id="cv-contact-${idx}"></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // 出口商列表
+  if (exporters.length > 0) {
+    html += `<div class="cv-section">
+      <div class="cv-section-title">🏭 出口商 <span class="cv-count">(${exporters.length} 家公司)</span></div>
+      <div class="cv-company-list">`;
+    exporters.forEach((c, idx) => {
+      const country = [...c.countries][0] || '';
+      const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+      html += `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','Exporter1')">
+        <span class="cv-flag">${getFlag(country)}</span>
+        <span class="cv-country-tag">${country || '未知'}</span>
+        <div class="cv-company-info">
+          <div class="cv-company-name" title="${c.name}">${c.name}</div>
+          <div class="cv-company-stats">${c.totalPrice > 0 ? '$'+c.totalPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : ''} ${c.totalQty > 0 ? ' · 数量 '+c.totalQty.toLocaleString() : ''}</div>
+        </div>
+        <span class="cv-badge">${c.count}+</span>
+        <button class="cv-contact-btn" onclick="event.stopPropagation();toggleInlineContact(this,'${safeN}')">📞 联系方式</button>
+      </div>
+      <div class="cv-contact-inline" id="cv-contact-exp-${idx}"></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+async function toggleInlineContact(btn, rawName) {
+  const container = btn.closest('.cv-company-card').nextElementSibling;
+  if (container.classList.contains('show')) {
+    container.classList.remove('show');
+    return;
+  }
+  container.classList.add('show');
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+
+  const token = getToken();
+  if (!token) { container.innerHTML = '<span style="color:var(--text-muted)">请先设置 Token</span>'; return; }
+
+  container.innerHTML = '<span style="color:var(--text-muted)">查询中...</span>';
+
+  try {
+    const resp = await fetch(`${BASE}/api/contact`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_name: company, sid: selectedSid, page_size: 10 }),
+    });
+    if (resp.status === 503) { container.innerHTML = '<span style="color:var(--red)">验证码阻塞中</span>'; return; }
+    const data = await resp.json();
+    if (!data.has_contact || !data.contact_records || data.contact_records.length === 0) {
+      container.innerHTML = '<span style="color:var(--text-muted)">暂无联系方式</span>';
+      return;
+    }
+    let h = '';
+    data.contact_records.forEach(rec => {
+      [['Tel','📞','电话'],['Email','📧','邮箱'],['Address','📍','地址'],['Website','🌐','网站'],['ContactPerson','👤','联系人'],['Fax','📠','传真']].forEach(([k,ico,lb]) => {
+        if (rec[k] && rec[k].trim()) {
+          let v = rec[k];
+          if (k==='Email') v = `<a href="mailto:${v}">${v}</a>`;
+          else if (k==='Website') v = `<a href="${v.startsWith('http')?v:'http://'+v}" target="_blank">${v}</a>`;
+          else if (k==='Tel') v = `<a href="tel:${v}">${v}</a>`;
+          h += `<div class="cv-contact-row"><span class="cl">${ico} ${lb}</span><span>${v}</span></div>`;
+        }
+      });
+    });
+    container.innerHTML = h || '<span style="color:var(--text-muted)">无详细联系信息</span>';
+  } catch (e) {
+    container.innerHTML = `<span style="color:var(--red)">查询失败: ${e.message}</span>`;
+  }
+}
+
+function formatNum(v) {
+  if (v == null || v === '' || v === '—') return '—';
+  const n = parseFloat(v);
+  if (isNaN(n)) return v;
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ========== AI 分析 ==========
+function toggleAI() {
+  document.getElementById('aiSidebar').classList.toggle('collapsed');
+}
+
+function analyzeResult(result, keyword) {
+  const records = filteredRecords.length ? filteredRecords : (result ? result.records : currentRecords) || [];
+  if (records.length === 0) return;
+
+  const importers = {}, exporters = {};
+  records.forEach(r => {
+    if (r.Importer1) importers[r.Importer1] = (importers[r.Importer1]||0) + 1;
+    if (r.Exporter1) exporters[r.Exporter1] = (exporters[r.Exporter1]||0) + 1;
+  });
+
+  const topImporters = Object.entries(importers).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const topExporters = Object.entries(exporters).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const totalValue = records.reduce((s, r) => s + (parseFloat(r.TotalPrice)||0), 0);
+  const avgPrice = records.reduce((s, r) => s + (parseFloat(r.UnitPrice)||0), 0) / records.length;
+
+  let html = `<h4>📊 "${keyword}" 查询分析</h4>`;
+  const total = (result && result.total) ? result.total : totalRecords;
+  html += `<p>共 <b style="color:var(--green-light)">${total.toLocaleString()}</b> 条记录，当前页 ${records.length} 条</p>`;
+
+  if (totalValue > 0) {
+    html += `<p>当前页总金额: <b style="color:var(--green-light)">$${totalValue.toLocaleString('en-US',{maximumFractionDigits:2})}</b></p>`;
+  }
+  if (avgPrice > 0) {
+    html += `<p>平均单价: <b style="color:var(--cyan)">$${avgPrice.toFixed(2)}</b></p>`;
+  }
+
+  // 原产国饼图
+  const countries = {};
+  records.forEach(r => { if (r.OrgCountry) countries[r.OrgCountry] = (countries[r.OrgCountry]||0) + 1; });
+  const topCountries = Object.entries(countries).sort((a,b) => b[1]-a[1]).slice(0, 6);
+  if (topCountries.length > 1) {
+    html += '<h4>🌍 原产国分布</h4>';
+    html += drawPieChart(topCountries, records.length);
+  }
+
+  // 进口商饼图
+  if (topImporters.length > 1) {
+    html += '<h4>🏢 进口商占比</h4>';
+    html += drawPieChart(topImporters, records.length);
+  }
+
+  if (topImporters.length) {
+    html += '<h4>🏢 主要进口商</h4>';
+    topImporters.forEach(([name, cnt]) => {
+      html += `<div class="apollo-card">
+        <div class="apollo-name"><b>${name}</b> <span style="color:var(--text-muted);font-size:11px;">(${cnt}条)</span></div>
+        <a class="apollo-btn" href="${apolloLink(name)}" target="_blank" onclick="event.stopPropagation();">🔍 Apollo 找邮箱</a>
+      </div>`;
+    });
+  }
+
+  // 出口商饼图
+  if (topExporters.length > 1) {
+    html += '<h4>🏭 出口商占比</h4>';
+    html += drawPieChart(topExporters, records.length);
+  }
+
+  if (topExporters.length) {
+    html += '<h4>🏭 主要出口商</h4>';
+    topExporters.forEach(([name, cnt]) => {
+      html += `<div class="apollo-card">
+        <div class="apollo-name"><b>${name}</b> <span style="color:var(--text-muted);font-size:11px;">(${cnt}条)</span></div>
+        <a class="apollo-btn" href="${apolloLink(name)}" target="_blank" onclick="event.stopPropagation();">🔍 Apollo 找邮箱</a>
+      </div>`;
+    });
+  }
+
+  html += '<h4>💡 客户开发建议</h4>';
+  if (topImporters.length) {
+    const target = topImporters[0][0];
+    const domain = guessDomain(target);
+    html += `<p>建议优先开发: <b style="color:var(--cyan)">${target}</b></p>`;
+    html += `<a class="apollo-btn-lg" href="${apolloLink(target)}" target="_blank">🚀 在 Apollo.io 查找联系人</a>`;
+    if (domain) {
+      html += `<p style="margin-top:8px;">可能的联系邮箱:</p><ul>`;
+      html += `<li class="email">purchasing@${domain}</li>`;
+      html += `<li class="email">info@${domain}</li>`;
+      html += `<li class="email">sales@${domain}</li>`;
+      html += `</ul>`;
+    }
+  }
+
+  html += '<hr style="border-color:var(--border);margin:10px 0;">';
+  html += '<p style="color:var(--text-muted);font-size:11px;">点击公司名旁的 + 按钮或 "Apollo 找邮箱" 按钮，自动跳转 Apollo.io 搜索决策人邮箱。</p>';
+
+  document.getElementById('aiContent').innerHTML = `<div class="ai-message">${html}</div>`;
+}
+
+// ========== 饼图 ==========
+function drawPieChart(data, totalCount) {
+  const COLORS = ['#2d8a4e','#0e7c7b','#c47f17','#d32f2f','#5c6bc0','#8a9e8a'];
+  const size = 120, cx = 60, cy = 60, r = 50;
+  let html = '<div style="display:flex;align-items:center;gap:10px;margin:6px 0;">';
+  // SVG
+  html += `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">`;
+  let cumAngle = -Math.PI / 2;
+  const otherCount = totalCount - data.reduce((s, d) => s + d[1], 0);
+  const slices = [...data];
+  if (otherCount > 0) slices.push(['其他', otherCount]);
+
+  slices.forEach(([, cnt], i) => {
+    const pct = cnt / totalCount;
+    if (pct <= 0) return;
+    const angle = pct * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(cumAngle);
+    const y1 = cy + r * Math.sin(cumAngle);
+    const x2 = cx + r * Math.cos(cumAngle + angle);
+    const y2 = cy + r * Math.sin(cumAngle + angle);
+    const large = angle > Math.PI ? 1 : 0;
+    const color = COLORS[i % COLORS.length];
+    if (pct >= 0.999) {
+      html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" />`;
+    } else {
+      html += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z" fill="${color}" />`;
+    }
+    cumAngle += angle;
+  });
+  html += '</svg>';
+  // 图例
+  html += '<div style="font-size:11px;line-height:1.8;">';
+  slices.forEach(([name, cnt], i) => {
+    const pct = ((cnt / totalCount) * 100).toFixed(1);
+    const color = COLORS[i % COLORS.length];
+    const shortName = name.length > 16 ? name.substring(0, 15) + '…' : name;
+    html += `<div style="display:flex;align-items:center;gap:4px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+      <span title="${name}">${shortName}</span>
+      <span style="color:#8a9e8a;margin-left:auto;">${pct}%</span>
+    </div>`;
+  });
+  html += '</div></div>';
+  return html;
+}
+
+// ========== 排除过滤 ==========
+function addExclude() {
+  const input = document.getElementById('excludeInput');
+  const raw = input.value.trim();
+  if (!raw) return;
+  // 支持逗号、顿号、空格分隔多个关键词
+  const words = raw.split(/[,，、;\s]+/).map(w => w.trim()).filter(w => w);
+  let added = false;
+  words.forEach(w => {
+    if (!excludeList.some(e => e.toLowerCase() === w.toLowerCase())) {
+      excludeList.push(w);
+      added = true;
+    }
+  });
+  if (added) { renderExcludeTags(); applyExcludeFilter(); }
+  input.value = '';
+}
+function removeExclude(idx) {
+  excludeList.splice(idx, 1);
+  renderExcludeTags();
+  applyExcludeFilter();
+}
+function renderExcludeTags() {
+  const el = document.getElementById('excludeTags');
+  el.innerHTML = excludeList.map((tag, i) =>
+    `<span class="exclude-tag">${tag} <span class="tag-close" onclick="removeExclude(${i})">×</span></span>`
+  ).join('');
+}
+function populateCountryFilters() {
+  const orgSet = new Set();
+  currentRecords.forEach(r => {
+    if (r.OrgCountry) orgSet.add(r.OrgCountry);
+  });
+
+  const orgSel = document.getElementById('countryFilter');
+  const prevOrg = orgSel.value;
+
+  orgSel.innerHTML = '<option value="">全部国家</option>';
+  [...orgSet].sort().forEach(c => {
+    const cnt = currentRecords.filter(r => r.OrgCountry === c).length;
+    orgSel.innerHTML += `<option value="${c}"${c===prevOrg?' selected':''}>${c} (${cnt})</option>`;
+  });
+}
+
+function applyAllFilters() {
+  const orgCountry = document.getElementById('countryFilter').value;
+
+  filteredRecords = currentRecords.filter(r => {
+    // 原产国筛选
+    if (orgCountry && r.OrgCountry !== orgCountry) return false;
+    // 排除公司
+    if (excludeList.length > 0) {
+      const imp = (r.Importer1 || '').toUpperCase();
+      const exp = (r.Exporter1 || '').toUpperCase();
+      if (excludeList.some(ex => {
+        const u = ex.toUpperCase();
+        return imp.includes(u) || exp.includes(u);
+      })) return false;
+    }
+    return true;
+  });
+
+  if (currentView === 'company') renderCompanyView(); else renderTable();
+  // 更新计数
+  const diff = currentRecords.length - filteredRecords.length;
+  const countEl = document.getElementById('filterCount');
+  if (diff > 0) {
+    countEl.textContent = `显示 ${filteredRecords.length} / ${currentRecords.length} 条（已过滤 ${diff} 条）`;
+  } else {
+    countEl.textContent = '';
+  }
+  // 重新分析，使用过滤后的数据
+  const kw = document.getElementById('keyword').value.trim();
+  analyzeResult(null, kw);
+}
+
+function applyExcludeFilter() { applyAllFilters(); }
+// 点击表格中公司名旁的 × 快速排除
+function quickExclude(company) {
+  if (!excludeList.some(e => e.toLowerCase() === company.toLowerCase())) {
+    excludeList.push(company);
+    renderExcludeTags();
+    applyExcludeFilter();
+  }
+}
+
+// ========== 公司详情弹窗 ==========
+function openCompanyModal(rawName, field) {
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+  document.getElementById('modalCompanyName').textContent = company;
+  document.getElementById('companyModal').style.display = 'flex';
+
+  const domain = guessDomain(company);
+  const records = (filteredRecords.length ? filteredRecords : currentRecords)
+    .filter(r => (r.Importer1||'') === company || (r.Exporter1||'') === company);
+  const totalVal = records.reduce((s, r) => s + (parseFloat(r.TotalPrice)||0), 0);
+  const totalQty = records.reduce((s, r) => s + (parseFloat(r.QTY)||0), 0);
+  const countries = [...new Set(records.map(r => r.OrgCountry || r.DesCountry).filter(Boolean))];
+  const products = [...new Set(records.map(r => r.ProductDesc1).filter(Boolean))].slice(0, 5);
+  const dateRange = records.map(r => r.Dates || r.Months).filter(Boolean).sort();
+
+  const q = encodeURIComponent(company);
+  const domainQ = domain ? encodeURIComponent(domain) : q;
+
+  // 生成邮箱列表
+  const emails = [];
+  if (domain) {
+    emails.push(
+      { addr: `info@${domain}`, note: '通用邮箱' },
+      { addr: `sales@${domain}`, note: '销售部门' },
+      { addr: `purchasing@${domain}`, note: '采购部门' },
+      { addr: `contact@${domain}`, note: '联系邮箱' },
+      { addr: `export@${domain}`, note: '出口部门' },
+      { addr: `import@${domain}`, note: '进口部门' },
+    );
+  }
+
+  let html = '';
+
+  // 交易概要
+  html += `<div class="modal-section">
+    <div class="modal-section-title">📊 交易概要</div>
+    <div class="trade-summary">
+      <div class="trade-card"><div class="trade-value">${records.length}</div><div class="trade-label">交易记录数</div></div>
+      <div class="trade-card"><div class="trade-value">${totalVal > 0 ? '$'+totalVal.toLocaleString('en-US',{maximumFractionDigits:0}) : '—'}</div><div class="trade-label">交易总额</div></div>
+      <div class="trade-card"><div class="trade-value">${totalQty > 0 ? totalQty.toLocaleString() : '—'}</div><div class="trade-label">总数量</div></div>
+    </div>`;
+  if (dateRange.length) html += `<p style="font-size:11px;color:#8a9e8a;margin-top:6px;">交易时间: ${dateRange[0]} ~ ${dateRange[dateRange.length-1]}</p>`;
+  if (countries.length) html += `<p style="font-size:11px;color:#8a9e8a;">涉及国家: ${countries.join(', ')}</p>`;
+  if (products.length) html += `<p style="font-size:11px;color:#8a9e8a;">主要产品: ${products.join(' | ')}</p>`;
+  html += `</div>`;
+
+  // 联系方式（API 查询）
+  html += `<div class="modal-section contact-section">
+    <div class="modal-section-title">📞 联系方式（海关数据库）</div>
+    <div id="contactArea">
+      <button class="contact-fetch-btn" onclick="fetchContact('${rawName}')">查询联系方式</button>
+    </div>
+  </div>`;
+
+  // 邮箱搜索
+  html += `<div class="modal-section">
+    <div class="modal-section-title">📧 邮箱查找</div>`;
+  if (domain) {
+    html += `<p style="font-size:12px;color:#4a6a4a;margin-bottom:6px;">推测公司域名: <b style="color:#0e7c7b;">${domain}</b></p>`;
+    html += `<div class="email-grid">`;
+    emails.forEach(e => {
+      html += `<div class="email-item">
+        <span><span class="email-addr">${e.addr}</span> <span style="color:#8a9e8a;font-size:10px;">(${e.note})</span></span>
+        <button class="email-copy" onclick="copyEmail('${e.addr}')">复制</button>
+      </div>`;
+    });
+    html += `</div>`;
+    html += `<p class="email-note">以上为根据公司名推测的常见邮箱格式，建议通过 Apollo.io 验证真实邮箱</p>`;
+  } else {
+    html += `<p style="font-size:12px;color:#8a9e8a;">无法推测公司域名，请使用下方工具搜索</p>`;
+  }
+  html += `<a class="modal-apollo-btn" href="${apolloLink(company)}" target="_blank">🚀 在 Apollo.io 搜索真实联系人和邮箱</a>`;
+  html += `</div>`;
+
+  // 背调链接
+  html += `<div class="modal-section">
+    <div class="modal-section-title">🔍 公司背调</div>
+    <div class="bg-links">
+      <a class="bg-link" href="https://www.google.com/search?q=%22${q}%22+company" target="_blank">
+        <span class="bg-icon">🔎</span>
+        <span class="bg-text"><span class="bg-title">Google 搜索</span><span class="bg-desc">搜索公司公开信息</span></span>
+      </a>
+      <a class="bg-link" href="https://www.linkedin.com/search/results/companies/?keywords=${q}" target="_blank">
+        <span class="bg-icon">💼</span>
+        <span class="bg-text"><span class="bg-title">LinkedIn</span><span class="bg-desc">公司主页 / 员工</span></span>
+      </a>
+      <a class="bg-link" href="https://www.dnb.com/business-directory/company-search.html?term=${q}" target="_blank">
+        <span class="bg-icon">🏢</span>
+        <span class="bg-text"><span class="bg-title">D&B (邓白氏)</span><span class="bg-desc">企业信用报告</span></span>
+      </a>
+      <a class="bg-link" href="https://www.zoominfo.com/s#!search/company/${q}" target="_blank">
+        <span class="bg-icon">📋</span>
+        <span class="bg-text"><span class="bg-title">ZoomInfo</span><span class="bg-desc">公司规模 / 联系人</span></span>
+      </a>
+      <a class="bg-link" href="https://opencorporates.com/companies?q=${q}" target="_blank">
+        <span class="bg-icon">📑</span>
+        <span class="bg-text"><span class="bg-title">OpenCorporates</span><span class="bg-desc">全球企业注册信息</span></span>
+      </a>
+      <a class="bg-link" href="https://www.importgenius.com/search?q=${q}" target="_blank">
+        <span class="bg-icon">🚢</span>
+        <span class="bg-text"><span class="bg-title">ImportGenius</span><span class="bg-desc">进出口记录核查</span></span>
+      </a>
+      <a class="bg-link" href="https://www.facebook.com/search/pages/?q=${q}" target="_blank">
+        <span class="bg-icon">📘</span>
+        <span class="bg-text"><span class="bg-title">Facebook</span><span class="bg-desc">公司主页 / 动态</span></span>
+      </a>
+      <a class="bg-link" href="https://www.google.com/maps/search/${q}" target="_blank">
+        <span class="bg-icon">📍</span>
+        <span class="bg-text"><span class="bg-title">Google Maps</span><span class="bg-desc">公司地址 / 实景</span></span>
+      </a>
+    </div>
+  </div>`;
+
+  // 操作按钮
+  html += `<div class="modal-section" style="display:flex;gap:8px;">
+    <button class="modal-apollo-btn" style="flex:1;background:#4a6a4a;" onclick="closeCompanyModal();searchByCompany('${rawName}','${field}')">🔍 搜索该公司全部交易记录</button>
+  </div>`;
+
+  document.getElementById('modalBody').innerHTML = html;
+}
+
+function closeCompanyModal() {
+  document.getElementById('companyModal').style.display = 'none';
+}
+
+function copyEmail(email) {
+  navigator.clipboard.writeText(email).then(() => {
+    const btns = document.querySelectorAll('.email-copy');
+    btns.forEach(b => { if (b.previousElementSibling && b.previousElementSibling.querySelector('.email-addr').textContent === email) { b.textContent = '已复制'; setTimeout(() => b.textContent = '复制', 1500); } });
+  });
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCompanyModal(); });
+
+async function fetchContact(rawName) {
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+  const area = document.getElementById('contactArea');
+  area.innerHTML = '<div class="contact-loading"><div class="spinner" style="margin:0 auto 6px;width:20px;height:20px;"></div>正在查询联系方式...</div>';
+
+  const token = getToken();
+  if (!token) { area.innerHTML = '<div class="contact-empty">请先设置 API Token</div>'; return; }
+
+  try {
+    const resp = await fetch(`${BASE}/api/contact`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_name: company, sid: selectedSid, page_size: 10 }),
+    });
+
+    if (resp.status === 503) {
+      const err = await resp.json();
+      area.innerHTML = `<div class="contact-empty">⚠️ 验证码阻塞中，请先 <a href="${err.captcha_url || 'https://cd.210k.cc/captcha/live'}" target="_blank">完成验证</a> 后重试</div>`;
+      return;
+    }
+
+    const data = await resp.json();
+
+    if (!data.has_contact) {
+      area.innerHTML = '<div class="contact-empty">该公司暂无联系方式数据</div>';
+      return;
+    }
+
+    if (!data.contact_records || data.contact_records.length === 0) {
+      area.innerHTML = '<div class="contact-empty">数据库有记录，但近 3 年内无联系方式数据</div>';
+      return;
+    }
+
+    let html = '';
+    data.contact_records.forEach((rec, i) => {
+      html += `<div class="contact-card">`;
+      const fields = [
+        { key: 'Tel', label: '电话', icon: '📞' },
+        { key: 'Fax', label: '传真', icon: '📠' },
+        { key: 'Email', label: '邮箱', icon: '📧' },
+        { key: 'Address', label: '地址', icon: '📍' },
+        { key: 'Website', label: '网站', icon: '🌐' },
+        { key: 'ContactPerson', label: '联系人', icon: '👤' },
+        { key: 'Importer1', label: '公司', icon: '🏢' },
+        { key: 'Exporter1', label: '公司', icon: '🏢' },
+      ];
+      fields.forEach(f => {
+        const val = rec[f.key];
+        if (val && val.trim()) {
+          const safeVal = val.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          let display = val;
+          if (f.key === 'Email') display = `<a href="mailto:${val}">${val}</a>`;
+          else if (f.key === 'Website') display = `<a href="${val.startsWith('http') ? val : 'http://'+val}" target="_blank">${val}</a>`;
+          else if (f.key === 'Tel') display = `<a href="tel:${val}">${val}</a>`;
+          html += `<div class="contact-row">
+            <span class="contact-label">${f.icon} ${f.label}</span>
+            <span class="contact-value">${display}</span>
+            <button class="contact-copy-btn" onclick="navigator.clipboard.writeText('${safeVal}');this.textContent='✓';setTimeout(()=>this.textContent='复制',1000)">复制</button>
+          </div>`;
+        }
+      });
+      html += `</div>`;
+    });
+    html += `<p style="font-size:11px;color:#8a9e8a;margin-top:4px;">共 ${data.total} 条联系记录</p>`;
+    area.innerHTML = html;
+  } catch (e) {
+    area.innerHTML = `<div class="contact-empty">查询失败: ${e.message}</div>`;
+  }
+}
+
+function searchByCompany(company, field) {
+  document.getElementById('keyword').value = company.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+  document.getElementById('field').value = field;
+  excludeList = [];
+  renderExcludeTags();
+  doSearch(1);
+}
+
+function searchApollo(company) {
+  const q = encodeURIComponent(company.replace(/&quot;/g, '"'));
+  window.open(`https://app.apollo.io/#/people?qOrganizationName=${q}`, '_blank');
+}
+
+function apolloLink(company) {
+  const q = encodeURIComponent(company);
+  return `https://app.apollo.io/#/people?qOrganizationName=${q}`;
+}
+
+function guessDomain(company) {
+  if (!company) return '';
+  const words = company.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/).filter(w =>
+    !['LLC','LTD','INC','CORP','CO','COMPANY','LIMITED','INTERNATIONAL','GROUP','TRADING','IMPORT','EXPORT','S.A.S','SA','SAS','PVT','PRIVATE'].includes(w.toUpperCase())
+  );
+  if (words.length === 0) return '';
+  return words.join('').toLowerCase() + '.com';
+}
+
+function aiAsk() {
+  const q = document.getElementById('aiInput').value.trim();
+  if (!q) return;
+  const body = document.getElementById('aiBody');
+  body.innerHTML += `<div style="margin-top:12px;padding:8px 10px;background:var(--bg-tertiary);border-radius:6px;font-size:12px;color:var(--accent-hover);">你: ${q}</div>`;
+  body.innerHTML += `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">AI: 此功能需要接入 AI API，当前仅提供自动数据分析。</div>`;
+  document.getElementById('aiInput').value = '';
+  body.scrollTop = body.scrollHeight;
+}
+
+// ========== Excel 导出 ==========
+function recordsToSheet(records) {
+  return records.map(r => ({
+    '日期': r.Dates || r.Months || '',
+    '出口商': r.Exporter1 || '', '进口商': r.Importer1 || '',
+    '产品描述': r.ProductDesc1 || '', 'HS编码': r.HSCODE || r.HSCODE8 || '',
+    '数量': r.QTY || '', '单位': r.UNIT || '', '重量(KG)': r.WT || '',
+    '总价(USD)': r.TotalPrice || '', '单价(USD)': r.UnitPrice || '',
+    '原产国': r.OrgCountry || '', '目的国': r.DesCountry || '',
+  }));
+}
+
+function exportCurrentPage() {
+  const data = filteredRecords.length ? filteredRecords : currentRecords;
+  if (!data.length) return;
+  const ws = XLSX.utils.json_to_sheet(recordsToSheet(data));
+  ws['!cols'] = [{wch:12},{wch:30},{wch:30},{wch:50},{wch:12},{wch:10},{wch:8},{wch:12},{wch:14},{wch:12},{wch:12},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
+  XLSX.writeFile(wb, `海关数据_${document.getElementById('keyword').value}_P${currentPage}.xlsx`);
+}
+
+async function exportAllPages() {
+  if (totalRecords === 0) return;
+  const ps = 30;
+  const pages = Math.min(Math.ceil(totalRecords / ps), 100);
+  if (!confirm(`共 ${totalRecords.toLocaleString()} 条，将导出前 ${pages * ps} 条（${pages}页），是否继续？`)) return;
+
+  const allRecs = [];
+  const btn = document.getElementById('exportAllBtn');
+  const orig = btn.textContent;
+  btn.disabled = true;
+
+  try {
+    for (let p = 1; p <= pages; p++) {
+      btn.textContent = `⬇ ${p}/${pages}`;
+      const data = await submitQuery({ ...lastQuery, page_num: p, page_size: ps });
+      let result;
+      if (data.cached) { result = data.result; }
+      else { const r = await pollTask(data.task_id); result = r.result; }
+      allRecs.push(...(result.records || []));
+      if (p < pages && !data.cached) await new Promise(r => setTimeout(r, 3000));
+    }
+    const ws = XLSX.utils.json_to_sheet(recordsToSheet(allRecs));
+    ws['!cols'] = [{wch:12},{wch:30},{wch:30},{wch:50},{wch:12},{wch:10},{wch:8},{wch:12},{wch:14},{wch:12},{wch:12},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    XLSX.writeFile(wb, `海关数据_${document.getElementById('keyword').value}_全部${allRecs.length}条.xlsx`);
+  } catch (e) { alert('导出失败: ' + e.message); }
+  finally { btn.textContent = orig; btn.disabled = false; }
+}
+
+// ========== 快捷键 ==========
+document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(1); });
+document.getElementById('excludeInput').addEventListener('keydown', e => { if (e.key === 'Enter') addExclude(); });
+document.getElementById('aiInput').addEventListener('keydown', e => { if (e.key === 'Enter') aiAsk(); });
+document.addEventListener('click', e => {
+  if (!e.target.closest('.col-settings') && !e.target.closest('[onclick*="toggleColSettings"]'))
+    document.getElementById('colSettings').style.display = 'none';
+});
+
+// ========== 初始化 ==========
+loadToken();
+initDSTree();
+initColSettings();
+renderHistory();
+fetchQueueStatus();
+setInterval(fetchQueueStatus, 30000);
+</script>
+</body>
+</html>
