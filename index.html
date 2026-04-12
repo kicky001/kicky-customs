@@ -1285,7 +1285,6 @@ async function submitQuery(params) {
 }
 
 async function pollTask(taskId) {
-<<<<<<< HEAD
   const startTime = Date.now();
   for (let i = 0; i < 300; i++) {
     await new Promise(r => setTimeout(r, 2000));
@@ -1310,19 +1309,6 @@ async function pollTask(taskId) {
     }
   }
   throw new Error('查询超时（等待超过10分钟）');
-=======
-  for (let i = 0; i < 60; i++) {
-    await new Promise(r => setTimeout(r, 2000));
-    const r = await fetch(`${BASE}/api/task/${taskId}`, { headers: getHeaders() });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
-    if (d.status === 'done') return d;
-    if (d.status === 'failed') throw new Error(d.error || '查询失败');
-    if (d.status === 'pending') showBanner('loading', `⏳ 排队中，前面还有 ${(d.position||1)-1} 人...`);
-    if (d.status === 'processing') showBanner('loading', '⚡ 正在查询...');
-  }
-  throw new Error('查询超时');
->>>>>>> 6da0bd98a1266becab91f1359d11f5d9c5cd0403
 }
 
 // ========== 搜索 ==========
