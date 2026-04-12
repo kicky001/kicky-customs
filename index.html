@@ -1451,31 +1451,36 @@ async function doSearch(page) {
     } else {
       // 多数据源合并查询
       const allRecords = [];
-      let totalCount = 0, totalMs = 0, cachedCount = 0;
+      let totalCount = 0, totalMs = 0, cachedCount = 0, failedSids = [];
       for (let i = 0; i < sids.length; i++) {
         const sid = sids[i];
         const dsItem = allDsItems.find(d => d.sid === sid);
         const dsName = dsItem ? dsItem.name : sid;
-        showBanner('loading', `⏳ 查询 ${i+1}/${sids.length}: ${dsName}...`);
+        showBanner('loading', `⏳ 查询 ${i+1}/${sids.length}: ${dsName}... (已获取 ${allRecords.length} 条)`);
         try {
           const params = { ...baseParams, sid };
           const r = await querySingleSid(params);
-          if (r.result && r.result.records) {
-            // 给每条记录标记来源
-            r.result.records.forEach(rec => rec._source = dsName);
-            allRecords.push(...r.result.records);
-            totalCount += r.result.total || 0;
+          if (r.result) {
+            const recs = r.result.records || [];
+            recs.forEach(rec => rec._source = dsName);
+            allRecords.push(...recs);
+            totalCount += r.result.total || recs.length;
             totalMs += r.result.took_ms || 0;
             if (r.cached) cachedCount++;
+            showBanner('loading', `✅ ${dsName}: ${recs.length} 条 (${i+1}/${sids.length})`);
           }
         } catch (e) {
-          console.warn(`SID ${sid} 查询失败:`, e.message);
+          failedSids.push(`${dsName}: ${e.message}`);
+          showBanner('loading', `⚠️ ${dsName} 失败: ${e.message}，继续下一个...`);
         }
-        // 非缓存查询之间加延迟，避免队列堆积
-        if (i < sids.length - 1) await new Promise(r => setTimeout(r, 500));
+        // 非缓存查询之间加延迟
+        if (i < sids.length - 1) await new Promise(r => setTimeout(r, 3000));
       }
       result = { total: totalCount, records: allRecords, took_ms: totalMs };
       cached = cachedCount === sids.length;
+      if (failedSids.length > 0 && allRecords.length > 0) {
+        setTimeout(() => showBanner('cache', `查询完成 ${allRecords.length} 条（${failedSids.length} 个数据源失败）`), 100);
+      }
     }
 
     if (!result || result.total === undefined) {
