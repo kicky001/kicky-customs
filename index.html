@@ -392,6 +392,93 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
 }
 .modal-apollo-btn:hover { opacity: 0.9; }
 
+/* 联系方式卡片 */
+.contact-section { margin-bottom: 16px; }
+.contact-loading { padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px; }
+.contact-card {
+  padding: 10px 14px; background: #f0faf3; border: 1px solid #a5d6a7;
+  border-radius: 6px; margin-bottom: 6px;
+}
+.contact-card .contact-row {
+  display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px;
+}
+.contact-card .contact-label { font-weight: 600; color: #2d6a3e; min-width: 50px; }
+.contact-card .contact-value { color: var(--text-primary); word-break: break-all; }
+.contact-card .contact-value a { color: #0e7c7b; text-decoration: none; }
+.contact-card .contact-value a:hover { text-decoration: underline; }
+.contact-copy-btn {
+  padding: 1px 6px; background: #e8f5e9; color: #2d8a4e; border: 1px solid #a5d6a7;
+  border-radius: 3px; cursor: pointer; font-size: 10px; flex-shrink: 0;
+}
+.contact-copy-btn:hover { background: #c8e6c9; }
+.contact-empty { padding: 10px; text-align: center; color: var(--text-muted); font-size: 12px; background: #fafafa; border-radius: 6px; border: 1px dashed #d4ddd4; }
+.contact-fetch-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px; background: #0e7c7b; color: #fff; border: none;
+  border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 500;
+}
+.contact-fetch-btn:hover { background: #0a6565; }
+.contact-fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 视图切换 */
+.view-toggle { display: flex; gap: 2px; background: var(--bg-tertiary); border-radius: 5px; padding: 2px; }
+.view-toggle-btn {
+  padding: 4px 12px; font-size: 12px; border: none; background: transparent;
+  color: var(--text-muted); border-radius: 4px; cursor: pointer;
+}
+.view-toggle-btn.active { background: #fff; color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* 公司聚合视图 */
+.company-view { padding: 16px; overflow-y: auto; height: 100%; }
+.cv-center-card {
+  max-width: 320px; margin: 0 auto 24px; padding: 14px 20px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: #fff;
+  border-radius: 12px; text-align: center; box-shadow: 0 4px 16px rgba(238,90,36,0.3);
+}
+.cv-center-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.cv-center-meta { font-size: 12px; opacity: 0.85; }
+.cv-section { margin-bottom: 20px; }
+.cv-section-title {
+  font-size: 13px; font-weight: 700; color: #2d6a3e; margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 2px solid #e8f5e9;
+  display: flex; align-items: center; gap: 6px;
+}
+.cv-section-title .cv-count { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.cv-company-list { display: flex; flex-direction: column; gap: 6px; }
+.cv-company-card {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: #fff; border: 1px solid #e0e8e0; border-radius: 8px;
+  cursor: pointer; transition: all 0.15s;
+}
+.cv-company-card:hover { border-color: var(--accent); background: #f0faf3; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.cv-flag { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+.cv-country-tag {
+  font-size: 10px; color: #fff; background: #8a9e8a; padding: 1px 6px;
+  border-radius: 3px; flex-shrink: 0;
+}
+.cv-company-info { flex: 1; min-width: 0; }
+.cv-company-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cv-company-stats { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.cv-company-stats b { color: var(--accent); }
+.cv-badge {
+  padding: 3px 10px; background: #ffeaea; color: #ee5a24; border-radius: 12px;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.cv-contact-btn {
+  padding: 3px 8px; background: #e3f2e6; color: #0e7c7b; border: 1px solid #a5d6a7;
+  border-radius: 4px; font-size: 11px; cursor: pointer; flex-shrink: 0;
+}
+.cv-contact-btn:hover { background: #c8e6c9; }
+.cv-contact-inline {
+  margin-top: 8px; padding: 8px 12px; background: #f0faf3; border: 1px solid #a5d6a7;
+  border-radius: 6px; font-size: 12px; display: none;
+}
+.cv-contact-inline.show { display: block; }
+.cv-contact-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.cv-contact-row .cl { font-weight: 600; color: #2d6a3e; min-width: 40px; }
+.cv-contact-row a { color: #0e7c7b; text-decoration: none; }
+.cv-contact-row a:hover { text-decoration: underline; }
+
 /* 响应式 */
 @media (max-width: 1200px) { .sidebar-right { display: none; } }
 @media (max-width: 900px) { .sidebar-left { width: 220px; min-width: 220px; } }
@@ -491,6 +578,10 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
         </div>
       </div>
       <div class="result-actions">
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" id="viewTable" onclick="switchView('table')">📋 表格</button>
+          <button class="view-toggle-btn" id="viewCompany" onclick="switchView('company')">🏢 公司</button>
+        </div>
         <div style="position:relative;">
           <button class="btn-action" onclick="toggleColSettings()">⚙ 列设置</button>
           <div class="col-settings" id="colSettings" style="display:none;"></div>
@@ -1350,6 +1441,187 @@ function renderTable() {
   document.getElementById('tableContainer').innerHTML = html;
 }
 
+// ========== 视图切换 ==========
+let currentView = 'table';
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('viewTable').classList.toggle('active', view === 'table');
+  document.getElementById('viewCompany').classList.toggle('active', view === 'company');
+  if (view === 'table') {
+    renderTable();
+  } else {
+    renderCompanyView();
+  }
+}
+
+// 国旗 emoji 映射
+const COUNTRY_FLAGS = {
+  'CHINA':'🇨🇳','CN':'🇨🇳','US':'🇺🇸','USA':'🇺🇸','UNITED STATES':'🇺🇸','MEXICO':'🇲🇽','MX':'🇲🇽',
+  'INDIA':'🇮🇳','IN':'🇮🇳','GERMANY':'🇩🇪','DE':'🇩🇪','JAPAN':'🇯🇵','JP':'🇯🇵','KOREA':'🇰🇷','KR':'🇰🇷',
+  'UK':'🇬🇧','UNITED KINGDOM':'🇬🇧','GB':'🇬🇧','BRAZIL':'🇧🇷','BR':'🇧🇷','RUSSIA':'🇷🇺','RU':'🇷🇺',
+  'FRANCE':'🇫🇷','FR':'🇫🇷','ITALY':'🇮🇹','IT':'🇮🇹','CANADA':'🇨🇦','CA':'🇨🇦','AUSTRALIA':'🇦🇺','AU':'🇦🇺',
+  'SPAIN':'🇪🇸','ES':'🇪🇸','TURKEY':'🇹🇷','TR':'🇹🇷','VIETNAM':'🇻🇳','VN':'🇻🇳','THAILAND':'🇹🇭','TH':'🇹🇭',
+  'INDONESIA':'🇮🇩','ID':'🇮🇩','MALAYSIA':'🇲🇾','MY':'🇲🇾','PHILIPPINES':'🇵🇭','PH':'🇵🇭',
+  'TAIWAN':'🇹🇼','TW':'🇹🇼','PAKISTAN':'🇵🇰','PK':'🇵🇰','BANGLADESH':'🇧🇩','BD':'🇧🇩',
+  'COLOMBIA':'🇨🇴','CO':'🇨🇴','PERU':'🇵🇪','PE':'🇵🇪','CHILE':'🇨🇱','CL':'🇨🇱','ARGENTINA':'🇦🇷','AR':'🇦🇷',
+  'ECUADOR':'🇪🇨','EC':'🇪🇨','PANAMA':'🇵🇦','PA':'🇵🇦','UKRAINE':'🇺🇦','UA':'🇺🇦',
+  'SOUTH AFRICA':'🇿🇦','ZA':'🇿🇦','KENYA':'🇰🇪','KE':'🇰🇪','NIGERIA':'🇳🇬','NG':'🇳🇬',
+  'EGYPT':'🇪🇬','EG':'🇪🇬','UAE':'🇦🇪','NETHERLANDS':'🇳🇱','NL':'🇳🇱','BELGIUM':'🇧🇪','BE':'🇧🇪',
+  'POLAND':'🇵🇱','PL':'🇵🇱','SWEDEN':'🇸🇪','SE':'🇸🇪','SINGAPORE':'🇸🇬','SG':'🇸🇬',
+  'HONG KONG':'🇭🇰','HK':'🇭🇰','SWITZERLAND':'🇨🇭','CH':'🇨🇭','AUSTRIA':'🇦🇹','AT':'🇦🇹',
+  'IRAN':'🇮🇷','IR':'🇮🇷','COSTA RICA':'🇨🇷','EL SALVADOR':'🇸🇻','GUATEMALA':'🇬🇹',
+  'DOMINICAN REPUBLIC':'🇩🇴','BOLIVIA':'🇧🇴','PARAGUAY':'🇵🇾','URUGUAY':'🇺🇾','VENEZUELA':'🇻🇪',
+  'SRI LANKA':'🇱🇰','KAZAKHSTAN':'🇰🇿','UZBEKISTAN':'🇺🇿','ARMENIA':'🇦🇲','MONGOLIA':'🇲🇳',
+  'NEW ZEALAND':'🇳🇿','NZ':'🇳🇿','ISRAEL':'🇮🇱','IL':'🇮🇱','PORTUGAL':'🇵🇹','PT':'🇵🇹',
+};
+function getFlag(country) {
+  if (!country) return '🏳️';
+  return COUNTRY_FLAGS[country.toUpperCase()] || '🏳️';
+}
+
+function renderCompanyView() {
+  const rows = filteredRecords.length ? filteredRecords : currentRecords;
+  if (!rows.length) { document.getElementById('tableContainer').innerHTML = '<div class="state-empty"><div class="icon">📭</div><p>无数据</p></div>'; return; }
+
+  // 聚合按公司
+  const importerMap = {}, exporterMap = {};
+  rows.forEach(r => {
+    const imp = r.Importer1 || '';
+    const exp = r.Exporter1 || '';
+    const price = parseFloat(r.TotalPrice) || 0;
+    const qty = parseFloat(r.QTY) || 0;
+    if (imp) {
+      if (!importerMap[imp]) importerMap[imp] = { name: imp, count: 0, totalPrice: 0, totalQty: 0, countries: new Set(), products: new Set() };
+      importerMap[imp].count++;
+      importerMap[imp].totalPrice += price;
+      importerMap[imp].totalQty += qty;
+      if (r.DesCountry) importerMap[imp].countries.add(r.DesCountry);
+      if (r.OrgCountry) importerMap[imp].countries.add(r.OrgCountry);
+      if (r.ProductDesc1) importerMap[imp].products.add(r.ProductDesc1);
+    }
+    if (exp) {
+      if (!exporterMap[exp]) exporterMap[exp] = { name: exp, count: 0, totalPrice: 0, totalQty: 0, countries: new Set(), products: new Set() };
+      exporterMap[exp].count++;
+      exporterMap[exp].totalPrice += price;
+      exporterMap[exp].totalQty += qty;
+      if (r.OrgCountry) exporterMap[exp].countries.add(r.OrgCountry);
+      if (r.ProductDesc1) exporterMap[exp].products.add(r.ProductDesc1);
+    }
+  });
+
+  const importers = Object.values(importerMap).sort((a, b) => b.count - a.count);
+  const exporters = Object.values(exporterMap).sort((a, b) => b.count - a.count);
+
+  // 检查是否是按公司搜索（搜索字段=Importer1/Exporter1）
+  const field = document.getElementById('field').value;
+  const keyword = document.getElementById('keyword').value.trim();
+  const isCompanySearch = (field === 'Importer1' || field === 'Exporter1');
+
+  let html = '<div class="company-view">';
+
+  // 如果是搜索特定公司，显示中心卡片
+  if (isCompanySearch && keyword) {
+    html += `<div class="cv-center-card">
+      <div class="cv-center-name">${keyword}</div>
+      <div class="cv-center-meta">${field === 'Importer1' ? '进口商' : '出口商'} · 共 ${rows.length} 条记录 · 总金额 $${rows.reduce((s,r)=>s+(parseFloat(r.TotalPrice)||0),0).toLocaleString('en-US',{maximumFractionDigits:0})}</div>
+    </div>`;
+  }
+
+  // 进口商列表
+  if (importers.length > 0) {
+    html += `<div class="cv-section">
+      <div class="cv-section-title">🏢 进口商 <span class="cv-count">(${importers.length} 家公司)</span></div>
+      <div class="cv-company-list">`;
+    importers.forEach((c, idx) => {
+      const country = [...c.countries][0] || '';
+      const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+      html += `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','Importer1')">
+        <span class="cv-flag">${getFlag(country)}</span>
+        <span class="cv-country-tag">${country || '未知'}</span>
+        <div class="cv-company-info">
+          <div class="cv-company-name" title="${c.name}">${c.name}</div>
+          <div class="cv-company-stats">${c.totalPrice > 0 ? '$'+c.totalPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : ''} ${c.totalQty > 0 ? ' · 数量 '+c.totalQty.toLocaleString() : ''}</div>
+        </div>
+        <span class="cv-badge">${c.count}+</span>
+        <button class="cv-contact-btn" onclick="event.stopPropagation();toggleInlineContact(this,'${safeN}')">📞 联系方式</button>
+      </div>
+      <div class="cv-contact-inline" id="cv-contact-${idx}"></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // 出口商列表
+  if (exporters.length > 0) {
+    html += `<div class="cv-section">
+      <div class="cv-section-title">🏭 出口商 <span class="cv-count">(${exporters.length} 家公司)</span></div>
+      <div class="cv-company-list">`;
+    exporters.forEach((c, idx) => {
+      const country = [...c.countries][0] || '';
+      const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+      html += `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','Exporter1')">
+        <span class="cv-flag">${getFlag(country)}</span>
+        <span class="cv-country-tag">${country || '未知'}</span>
+        <div class="cv-company-info">
+          <div class="cv-company-name" title="${c.name}">${c.name}</div>
+          <div class="cv-company-stats">${c.totalPrice > 0 ? '$'+c.totalPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : ''} ${c.totalQty > 0 ? ' · 数量 '+c.totalQty.toLocaleString() : ''}</div>
+        </div>
+        <span class="cv-badge">${c.count}+</span>
+        <button class="cv-contact-btn" onclick="event.stopPropagation();toggleInlineContact(this,'${safeN}')">📞 联系方式</button>
+      </div>
+      <div class="cv-contact-inline" id="cv-contact-exp-${idx}"></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+async function toggleInlineContact(btn, rawName) {
+  const container = btn.closest('.cv-company-card').nextElementSibling;
+  if (container.classList.contains('show')) {
+    container.classList.remove('show');
+    return;
+  }
+  container.classList.add('show');
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+
+  const token = getToken();
+  if (!token) { container.innerHTML = '<span style="color:var(--text-muted)">请先设置 Token</span>'; return; }
+
+  container.innerHTML = '<span style="color:var(--text-muted)">查询中...</span>';
+
+  try {
+    const resp = await fetch(`${BASE}/api/contact`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_name: company, sid: selectedSid, page_size: 10 }),
+    });
+    if (resp.status === 503) { container.innerHTML = '<span style="color:var(--red)">验证码阻塞中</span>'; return; }
+    const data = await resp.json();
+    if (!data.has_contact || !data.contact_records || data.contact_records.length === 0) {
+      container.innerHTML = '<span style="color:var(--text-muted)">暂无联系方式</span>';
+      return;
+    }
+    let h = '';
+    data.contact_records.forEach(rec => {
+      [['Tel','📞','电话'],['Email','📧','邮箱'],['Address','📍','地址'],['Website','🌐','网站'],['ContactPerson','👤','联系人'],['Fax','📠','传真']].forEach(([k,ico,lb]) => {
+        if (rec[k] && rec[k].trim()) {
+          let v = rec[k];
+          if (k==='Email') v = `<a href="mailto:${v}">${v}</a>`;
+          else if (k==='Website') v = `<a href="${v.startsWith('http')?v:'http://'+v}" target="_blank">${v}</a>`;
+          else if (k==='Tel') v = `<a href="tel:${v}">${v}</a>`;
+          h += `<div class="cv-contact-row"><span class="cl">${ico} ${lb}</span><span>${v}</span></div>`;
+        }
+      });
+    });
+    container.innerHTML = h || '<span style="color:var(--text-muted)">无详细联系信息</span>';
+  } catch (e) {
+    container.innerHTML = `<span style="color:var(--red)">查询失败: ${e.message}</span>`;
+  }
+}
+
 function formatNum(v) {
   if (v == null || v === '' || v === '—') return '—';
   const n = parseFloat(v);
@@ -1558,7 +1830,7 @@ function applyAllFilters() {
     return true;
   });
 
-  renderTable();
+  if (currentView === 'company') renderCompanyView(); else renderTable();
   // 更新计数
   const diff = currentRecords.length - filteredRecords.length;
   const countEl = document.getElementById('filterCount');
@@ -1627,6 +1899,14 @@ function openCompanyModal(rawName, field) {
   if (countries.length) html += `<p style="font-size:11px;color:#8a9e8a;">涉及国家: ${countries.join(', ')}</p>`;
   if (products.length) html += `<p style="font-size:11px;color:#8a9e8a;">主要产品: ${products.join(' | ')}</p>`;
   html += `</div>`;
+
+  // 联系方式（API 查询）
+  html += `<div class="modal-section contact-section">
+    <div class="modal-section-title">📞 联系方式（海关数据库）</div>
+    <div id="contactArea">
+      <button class="contact-fetch-btn" onclick="fetchContact('${rawName}')">查询联系方式</button>
+    </div>
+  </div>`;
 
   // 邮箱搜索
   html += `<div class="modal-section">
@@ -1707,6 +1987,76 @@ function copyEmail(email) {
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCompanyModal(); });
+
+async function fetchContact(rawName) {
+  const company = rawName.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+  const area = document.getElementById('contactArea');
+  area.innerHTML = '<div class="contact-loading"><div class="spinner" style="margin:0 auto 6px;width:20px;height:20px;"></div>正在查询联系方式...</div>';
+
+  const token = getToken();
+  if (!token) { area.innerHTML = '<div class="contact-empty">请先设置 API Token</div>'; return; }
+
+  try {
+    const resp = await fetch(`${BASE}/api/contact`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_name: company, sid: selectedSid, page_size: 10 }),
+    });
+
+    if (resp.status === 503) {
+      const err = await resp.json();
+      area.innerHTML = `<div class="contact-empty">⚠️ 验证码阻塞中，请先 <a href="${err.captcha_url || 'https://cd.210k.cc/captcha/live'}" target="_blank">完成验证</a> 后重试</div>`;
+      return;
+    }
+
+    const data = await resp.json();
+
+    if (!data.has_contact) {
+      area.innerHTML = '<div class="contact-empty">该公司暂无联系方式数据</div>';
+      return;
+    }
+
+    if (!data.contact_records || data.contact_records.length === 0) {
+      area.innerHTML = '<div class="contact-empty">数据库有记录，但近 3 年内无联系方式数据</div>';
+      return;
+    }
+
+    let html = '';
+    data.contact_records.forEach((rec, i) => {
+      html += `<div class="contact-card">`;
+      const fields = [
+        { key: 'Tel', label: '电话', icon: '📞' },
+        { key: 'Fax', label: '传真', icon: '📠' },
+        { key: 'Email', label: '邮箱', icon: '📧' },
+        { key: 'Address', label: '地址', icon: '📍' },
+        { key: 'Website', label: '网站', icon: '🌐' },
+        { key: 'ContactPerson', label: '联系人', icon: '👤' },
+        { key: 'Importer1', label: '公司', icon: '🏢' },
+        { key: 'Exporter1', label: '公司', icon: '🏢' },
+      ];
+      fields.forEach(f => {
+        const val = rec[f.key];
+        if (val && val.trim()) {
+          const safeVal = val.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          let display = val;
+          if (f.key === 'Email') display = `<a href="mailto:${val}">${val}</a>`;
+          else if (f.key === 'Website') display = `<a href="${val.startsWith('http') ? val : 'http://'+val}" target="_blank">${val}</a>`;
+          else if (f.key === 'Tel') display = `<a href="tel:${val}">${val}</a>`;
+          html += `<div class="contact-row">
+            <span class="contact-label">${f.icon} ${f.label}</span>
+            <span class="contact-value">${display}</span>
+            <button class="contact-copy-btn" onclick="navigator.clipboard.writeText('${safeVal}');this.textContent='✓';setTimeout(()=>this.textContent='复制',1000)">复制</button>
+          </div>`;
+        }
+      });
+      html += `</div>`;
+    });
+    html += `<p style="font-size:11px;color:#8a9e8a;margin-top:4px;">共 ${data.total} 条联系记录</p>`;
+    area.innerHTML = html;
+  } catch (e) {
+    area.innerHTML = `<div class="contact-empty">查询失败: ${e.message}</div>`;
+  }
+}
 
 function searchByCompany(company, field) {
   document.getElementById('keyword').value = company.replace(/&quot;/g, '"').replace(/\\'/g, "'");
