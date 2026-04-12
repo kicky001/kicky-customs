@@ -428,49 +428,53 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
 }
 .view-toggle-btn.active { background: #fff; color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-/* 公司聚合视图 */
-.company-view { padding: 16px; overflow-y: auto; height: 100%; }
+/* 公司关系图视图 */
+.company-view { padding: 20px; overflow-y: auto; height: 100%; }
+.cv-graph { display: flex; align-items: flex-start; justify-content: center; gap: 0; min-height: 400px; }
+.cv-side { flex: 1; max-width: 340px; display: flex; flex-direction: column; gap: 8px; }
+.cv-center-col { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; padding: 0 10px; min-width: 200px; position: sticky; top: 40%; }
+.cv-connector-label { text-align: center; font-size: 12px; color: #999; margin-bottom: 6px; }
+.cv-connector-label b { display: block; font-size: 11px; color: #ccc; }
 .cv-center-card {
-  max-width: 320px; margin: 0 auto 24px; padding: 14px 20px;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: #fff;
-  border-radius: 12px; text-align: center; box-shadow: 0 4px 16px rgba(238,90,36,0.3);
+  padding: 16px 24px; background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: #fff;
+  border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(238,90,36,0.3); min-width: 180px;
 }
-.cv-center-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-.cv-center-meta { font-size: 12px; opacity: 0.85; }
-.cv-section { margin-bottom: 20px; }
-.cv-section-title {
-  font-size: 13px; font-weight: 700; color: #2d6a3e; margin-bottom: 10px;
-  padding-bottom: 6px; border-bottom: 2px solid #e8f5e9;
-  display: flex; align-items: center; gap: 6px;
-}
-.cv-section-title .cv-count { font-weight: 400; color: var(--text-muted); font-size: 12px; }
-.cv-company-list { display: flex; flex-direction: column; gap: 6px; }
+.cv-center-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; word-break: break-word; }
+.cv-center-meta { font-size: 11px; opacity: 0.85; }
+
+/* 公司卡片 */
 .cv-company-card {
-  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-  background: #fff; border: 1px solid #e0e8e0; border-radius: 8px;
-  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  background: #fff; border: 1px solid #e8e8e8; border-radius: 10px;
+  cursor: pointer; transition: all 0.15s; position: relative;
 }
-.cv-company-card:hover { border-color: var(--accent); background: #f0faf3; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.cv-flag { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
-.cv-country-tag {
-  font-size: 10px; color: #fff; background: #8a9e8a; padding: 1px 6px;
-  border-radius: 3px; flex-shrink: 0;
+.cv-company-card:hover { border-color: #ff6b6b; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+.cv-company-card::after {
+  content: ''; position: absolute; top: 50%; width: 20px; height: 1px; background: #ddd;
 }
+.cv-side-left .cv-company-card::after { right: -20px; }
+.cv-side-right .cv-company-card::after { left: -20px; }
+.cv-flag { font-size: 18px; flex-shrink: 0; }
+.cv-country-tag { font-size: 9px; color: #fff; background: #aaa; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
 .cv-company-info { flex: 1; min-width: 0; }
-.cv-company-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cv-company-stats { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.cv-company-stats b { color: var(--accent); }
-.cv-badge {
-  padding: 3px 10px; background: #ffeaea; color: #ee5a24; border-radius: 12px;
-  font-size: 12px; font-weight: 600; flex-shrink: 0;
-}
+.cv-company-name { font-size: 12px; font-weight: 600; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+.cv-badge { padding: 2px 8px; background: #ffeaea; color: #ee5a24; border-radius: 10px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+
+/* 非关系图模式（产品搜索时） */
+.cv-list-mode { max-width: 800px; margin: 0 auto; }
+.cv-section { margin-bottom: 20px; }
+.cv-section-title { font-size: 13px; font-weight: 700; color: #2d6a3e; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #e8f5e9; }
+.cv-section-title .cv-count { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.cv-list-mode .cv-company-card::after { display: none; }
+.cv-list-mode .cv-company-card { gap: 10px; }
+.cv-list-mode .cv-company-name { max-width: 300px; }
 .cv-contact-btn {
   padding: 3px 8px; background: #e3f2e6; color: #0e7c7b; border: 1px solid #a5d6a7;
   border-radius: 4px; font-size: 11px; cursor: pointer; flex-shrink: 0;
 }
 .cv-contact-btn:hover { background: #c8e6c9; }
 .cv-contact-inline {
-  margin-top: 8px; padding: 8px 12px; background: #f0faf3; border: 1px solid #a5d6a7;
+  margin: 4px 0 0; padding: 8px 12px; background: #f0faf3; border: 1px solid #a5d6a7;
   border-radius: 6px; font-size: 12px; display: none;
 }
 .cv-contact-inline.show { display: block; }
@@ -1503,88 +1507,93 @@ function renderCompanyView() {
     const imp = r.Importer1 || '';
     const exp = r.Exporter1 || '';
     const price = parseFloat(r.TotalPrice) || 0;
-    const qty = parseFloat(r.QTY) || 0;
     if (imp) {
-      if (!importerMap[imp]) importerMap[imp] = { name: imp, count: 0, totalPrice: 0, totalQty: 0, countries: new Set(), products: new Set() };
+      if (!importerMap[imp]) importerMap[imp] = { name: imp, count: 0, totalPrice: 0, countries: new Set() };
       importerMap[imp].count++;
       importerMap[imp].totalPrice += price;
-      importerMap[imp].totalQty += qty;
       if (r.DesCountry) importerMap[imp].countries.add(r.DesCountry);
       if (r.OrgCountry) importerMap[imp].countries.add(r.OrgCountry);
-      if (r.ProductDesc1) importerMap[imp].products.add(r.ProductDesc1);
     }
     if (exp) {
-      if (!exporterMap[exp]) exporterMap[exp] = { name: exp, count: 0, totalPrice: 0, totalQty: 0, countries: new Set(), products: new Set() };
+      if (!exporterMap[exp]) exporterMap[exp] = { name: exp, count: 0, totalPrice: 0, countries: new Set() };
       exporterMap[exp].count++;
       exporterMap[exp].totalPrice += price;
-      exporterMap[exp].totalQty += qty;
       if (r.OrgCountry) exporterMap[exp].countries.add(r.OrgCountry);
-      if (r.ProductDesc1) exporterMap[exp].products.add(r.ProductDesc1);
     }
   });
 
   const importers = Object.values(importerMap).sort((a, b) => b.count - a.count);
   const exporters = Object.values(exporterMap).sort((a, b) => b.count - a.count);
 
-  // 检查是否是按公司搜索（搜索字段=Importer1/Exporter1）
   const field = document.getElementById('field').value;
   const keyword = document.getElementById('keyword').value.trim();
   const isCompanySearch = (field === 'Importer1' || field === 'Exporter1');
+  const totalVal = rows.reduce((s,r) => s + (parseFloat(r.TotalPrice)||0), 0);
 
-  let html = '<div class="company-view">';
-
-  // 如果是搜索特定公司，显示中心卡片
-  if (isCompanySearch && keyword) {
-    html += `<div class="cv-center-card">
-      <div class="cv-center-name">${keyword}</div>
-      <div class="cv-center-meta">${field === 'Importer1' ? '进口商' : '出口商'} · 共 ${rows.length} 条记录 · 总金额 $${rows.reduce((s,r)=>s+(parseFloat(r.TotalPrice)||0),0).toLocaleString('en-US',{maximumFractionDigits:0})}</div>
+  function companyCard(c, roleField) {
+    const country = [...c.countries][0] || '';
+    const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+    return `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','${roleField}')">
+      <span class="cv-flag">${getFlag(country)}</span>
+      <span class="cv-country-tag">${country || '—'}</span>
+      <div class="cv-company-info">
+        <div class="cv-company-name" title="${c.name}">${c.name}</div>
+      </div>
+      <span class="cv-badge">(${c.count}+)</span>
     </div>`;
   }
 
-  // 进口商列表
-  if (importers.length > 0) {
-    html += `<div class="cv-section">
-      <div class="cv-section-title">🏢 进口商 <span class="cv-count">(${importers.length} 家公司)</span></div>
-      <div class="cv-company-list">`;
-    importers.forEach((c, idx) => {
-      const country = [...c.countries][0] || '';
-      const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
-      html += `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','Importer1')">
-        <span class="cv-flag">${getFlag(country)}</span>
-        <span class="cv-country-tag">${country || '未知'}</span>
-        <div class="cv-company-info">
-          <div class="cv-company-name" title="${c.name}">${c.name}</div>
-          <div class="cv-company-stats">${c.totalPrice > 0 ? '$'+c.totalPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : ''} ${c.totalQty > 0 ? ' · 数量 '+c.totalQty.toLocaleString() : ''}</div>
-        </div>
-        <span class="cv-badge">${c.count}+</span>
-        <button class="cv-contact-btn" onclick="event.stopPropagation();toggleInlineContact(this,'${safeN}')">📞 联系方式</button>
-      </div>
-      <div class="cv-contact-inline" id="cv-contact-${idx}"></div>`;
-    });
-    html += `</div></div>`;
-  }
+  let html = '<div class="company-view">';
 
-  // 出口商列表
-  if (exporters.length > 0) {
-    html += `<div class="cv-section">
-      <div class="cv-section-title">🏭 出口商 <span class="cv-count">(${exporters.length} 家公司)</span></div>
-      <div class="cv-company-list">`;
-    exporters.forEach((c, idx) => {
-      const country = [...c.countries][0] || '';
-      const safeN = c.name.replace(/"/g, '&quot;').replace(/'/g, "\\'");
-      html += `<div class="cv-company-card" onclick="openCompanyModal('${safeN}','Exporter1')">
-        <span class="cv-flag">${getFlag(country)}</span>
-        <span class="cv-country-tag">${country || '未知'}</span>
-        <div class="cv-company-info">
-          <div class="cv-company-name" title="${c.name}">${c.name}</div>
-          <div class="cv-company-stats">${c.totalPrice > 0 ? '$'+c.totalPrice.toLocaleString('en-US',{maximumFractionDigits:0}) : ''} ${c.totalQty > 0 ? ' · 数量 '+c.totalQty.toLocaleString() : ''}</div>
+  // 关系图模式：按公司名搜索时
+  if (isCompanySearch && keyword) {
+    html += '<div class="cv-graph">';
+
+    // 左侧：采购商/进口商
+    html += '<div class="cv-side cv-side-left">';
+    importers.forEach(c => { html += companyCard(c, 'Importer1'); });
+    if (importers.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无采购商数据</div>';
+    html += '</div>';
+
+    // 中间：连线 + 中心公司
+    html += `<div class="cv-center-col">
+      <div class="cv-connector-label">采购商<b>(${importers.length})</b></div>
+      <div style="width:1px;height:30px;background:#ddd;margin:0 auto;"></div>
+      <div style="display:flex;align-items:center;gap:0;">
+        <div style="width:40px;height:1px;background:#ddd;"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#f0c040;flex-shrink:0;"></div>
+        <div class="cv-center-card">
+          <div class="cv-center-name">${keyword}</div>
+          <div class="cv-center-meta">${rows.length} 条记录 · $${totalVal.toLocaleString('en-US',{maximumFractionDigits:0})}</div>
         </div>
-        <span class="cv-badge">${c.count}+</span>
-        <button class="cv-contact-btn" onclick="event.stopPropagation();toggleInlineContact(this,'${safeN}')">📞 联系方式</button>
+        <div style="width:10px;height:10px;border-radius:50%;background:#f0c040;flex-shrink:0;"></div>
+        <div style="width:40px;height:1px;background:#ddd;"></div>
       </div>
-      <div class="cv-contact-inline" id="cv-contact-exp-${idx}"></div>`;
-    });
-    html += `</div></div>`;
+      <div style="width:1px;height:30px;background:#ddd;margin:0 auto;"></div>
+      <div class="cv-connector-label">供应商<b>(${exporters.length})</b></div>
+    </div>`;
+
+    // 右侧：供应商/出口商
+    html += '<div class="cv-side cv-side-right">';
+    exporters.forEach(c => { html += companyCard(c, 'Exporter1'); });
+    if (exporters.length === 0) html += '<div style="text-align:center;color:#999;font-size:12px;padding:20px;">无供应商数据</div>';
+    html += '</div>';
+
+    html += '</div>';
+  } else {
+    // 列表模式：按产品搜索时
+    html += '<div class="cv-list-mode">';
+    if (importers.length > 0) {
+      html += `<div class="cv-section"><div class="cv-section-title">🏢 进口商 <span class="cv-count">(${importers.length} 家)</span></div>`;
+      importers.forEach(c => { html += companyCard(c, 'Importer1'); });
+      html += '</div>';
+    }
+    if (exporters.length > 0) {
+      html += `<div class="cv-section"><div class="cv-section-title">🏭 出口商 <span class="cv-count">(${exporters.length} 家)</span></div>`;
+      exporters.forEach(c => { html += companyCard(c, 'Exporter1'); });
+      html += '</div>';
+    }
+    html += '</div>';
   }
 
   html += '</div>';
@@ -1912,6 +1921,42 @@ function openCompanyModal(rawName, field) {
   if (countries.length) html += `<p style="font-size:11px;color:#8a9e8a;">涉及国家: ${countries.join(', ')}</p>`;
   if (products.length) html += `<p style="font-size:11px;color:#8a9e8a;">主要产品: ${products.join(' | ')}</p>`;
   html += `</div>`;
+
+  // 最近提单记录
+  if (records.length > 0) {
+    const showRecs = records.slice(0, 5);
+    html += `<div class="modal-section">
+      <div class="modal-section-title">📋 最近提单记录 <span style="font-weight:400;color:#8a9e8a;font-size:11px;">(显示前 ${showRecs.length} 条)</span></div>
+      <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="background:#e8f0e8;">
+          <th style="padding:6px 8px;text-align:left;font-size:10px;color:#2d6a3e;white-space:nowrap;">日期</th>
+          <th style="padding:6px 8px;text-align:left;font-size:10px;color:#2d6a3e;white-space:nowrap;">产品描述</th>
+          <th style="padding:6px 8px;text-align:left;font-size:10px;color:#2d6a3e;white-space:nowrap;">HS编码</th>
+          <th style="padding:6px 8px;text-align:right;font-size:10px;color:#2d6a3e;white-space:nowrap;">数量</th>
+          <th style="padding:6px 8px;text-align:right;font-size:10px;color:#2d6a3e;white-space:nowrap;">重量(KG)</th>
+          <th style="padding:6px 8px;text-align:right;font-size:10px;color:#2d6a3e;white-space:nowrap;">总价(USD)</th>
+          <th style="padding:6px 8px;text-align:right;font-size:10px;color:#2d6a3e;white-space:nowrap;">单价</th>
+        </tr></thead><tbody>`;
+    showRecs.forEach(r => {
+      const desc = (r.ProductDesc1 || '—');
+      const shortDesc = desc.length > 50 ? desc.substring(0, 48) + '...' : desc;
+      html += `<tr style="border-bottom:1px solid #e8ede8;">
+        <td style="padding:5px 8px;white-space:nowrap;">${r.Dates || r.Months || '—'}</td>
+        <td style="padding:5px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${desc.replace(/"/g,'&quot;')}">${shortDesc}</td>
+        <td style="padding:5px 8px;white-space:nowrap;">${r.HSCODE || r.HSCODE8 || '—'}</td>
+        <td style="padding:5px 8px;text-align:right;white-space:nowrap;">${r.QTY || '—'} ${r.UNIT || ''}</td>
+        <td style="padding:5px 8px;text-align:right;white-space:nowrap;">${r.WT || '—'}</td>
+        <td style="padding:5px 8px;text-align:right;white-space:nowrap;color:#1b7a3a;font-weight:600;">${r.TotalPrice ? '$'+parseFloat(r.TotalPrice).toLocaleString('en-US',{minimumFractionDigits:2}) : '—'}</td>
+        <td style="padding:5px 8px;text-align:right;white-space:nowrap;">${r.UnitPrice ? '$'+parseFloat(r.UnitPrice).toFixed(2) : '—'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    if (records.length > 5) {
+      html += `<p style="font-size:11px;color:#8a9e8a;margin-top:6px;text-align:center;">还有 ${records.length - 5} 条记录，点击下方按钮搜索全部</p>`;
+    }
+    html += `</div>`;
+  }
 
   // 联系方式（API 查询）
   html += `<div class="modal-section contact-section">
