@@ -18,7 +18,6 @@ if (-not (Test-Path ".git")) {
     & $git branch -M main
 }
 
-# Set git user info
 & $git config user.email "kicky001@users.noreply.github.com"
 & $git config user.name "kicky001"
 
@@ -30,16 +29,7 @@ Write-Host ""
 
 & $git add index.html worker.js server.ps1 start.bat push.bat push.ps1
 & $git commit -m "update $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
-
-# Pull remote first then push
-& $git pull origin main --allow-unrelated-histories --no-edit 2>$null
-& $git push -u origin main
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host ""
-    Write-Host "Trying force push..." -ForegroundColor Yellow
-    & $git push -u origin main --force
-}
+& $git push origin main --force
 
 Write-Host ""
 Write-Host "======================================" -ForegroundColor Green
