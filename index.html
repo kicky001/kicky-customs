@@ -545,6 +545,7 @@ td.company .company-link:hover { color: var(--accent); text-decoration: underlin
     <span class="queue-item"><span class="queue-dot" style="background:var(--orange)"></span> 处理中 <b id="qProcessing">-</b></span>
     <span class="queue-item"><span class="queue-dot" style="background:var(--accent)"></span> 完成 <b id="qDone">-</b></span>
     <span class="queue-item"><span class="queue-dot" style="background:var(--cyan)"></span> 缓存 <b id="qCache">-</b></span>
+    <span class="queue-item"><span class="queue-dot" style="background:#fff"></span> 配额 <b id="qQuota">200</b>/h</span>
   </div>
   <div class="topbar-right">
     <input type="password" class="token-input" id="tokenInput" placeholder="API Token..." />
@@ -1356,11 +1357,42 @@ async function fetchQueueStatus() {
   } catch {}
 }
 
+// ========== 配额跟踪 ==========
+let queryCount = 0;
+let queryCountResetTime = Date.now() + 3600000;
+const HOURLY_LIMIT = 200;
+
+function trackQuery() {
+  if (Date.now() > queryCountResetTime) { queryCount = 0; queryCountResetTime = Date.now() + 3600000; }
+  queryCount++;
+  updateQuotaDisplay();
+}
+function updateQuotaDisplay() {
+  const el = document.getElementById('qQuota');
+  if (!el) return;
+  const remaining = Math.max(0, HOURLY_LIMIT - queryCount);
+  el.textContent = remaining;
+  el.style.color = remaining < 20 ? '#d32f2f' : remaining < 50 ? '#c47f17' : '';
+}
+
 // ========== API ==========
 function getHeaders() { return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' }; }
 
 async function submitQuery(params) {
   const r = await fetch(`${BASE}/api/query`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(params) });
+  if (r.status === 429) {
+    const txt = await r.text();
+    let msg = '查询配额已用完，请稍后再试';
+    try { const j = JSON.parse(txt); msg = j.message || j.error || msg; } catch {}
+    throw new Error(`⚠️ 限流: ${msg}`);
+  }
+  if (r.status === 503) {
+    const txt = await r.text();
+    let captchaUrl = 'https://cd.210k.cc/captcha/live';
+    try { const j = JSON.parse(txt); captchaUrl = j.captcha_url || captchaUrl; } catch {}
+    throw new Error(`⚠️ 验证码阻塞中，请<a href="${captchaUrl}" target="_blank" style="color:#c62828;text-decoration:underline;">点此解题</a>后重试`);
+  }
+  trackQuery();
   if (!r.ok) {
     const txt = await r.text();
     throw new Error(`HTTP ${r.status}: ${txt}`);
